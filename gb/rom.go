@@ -48,10 +48,7 @@ func (r *Rom) HeaderChecksum() byte {
 
 func (r *Rom) GlobalChecksum() uint16 {
 	x := 0
-	for _, b := range r.data[:0x014e] {
-		x += int(b)
-	}
-	for _, b := range r.data[0x150:] {
+	for _, b := range append(r.data[:0x014e], r.data[0x0150:]...) {
 		x += int(b)
 	}
 
