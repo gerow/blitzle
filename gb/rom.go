@@ -78,6 +78,7 @@ func (r *Rom) Info() string {
 		destination = "Non-Japanese"
 	}
 	o.WriteString(fmt.Sprintf("Destination: %s\n", destination))
+	o.WriteString(fmt.Sprintf("Mask ROM version: %02Xh\n", r.data[0x014c]))
 	headerCheck := "✗"
 	if r.HeaderChecksum() == r.data[0x014d] {
 		headerCheck = "✓"
