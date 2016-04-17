@@ -93,3 +93,19 @@ func (r *Rom) Info() string {
 
 	return o.String()
 }
+
+func (r *Rom) Rb(uint16 addr) uint8 {
+	return r.data[addr]
+}
+
+func (r *Rom) Wb(uint16 addr, uint8 val) {
+	log.Println("Attempt to write to ROM at %04Xh with val %02Xh ignored", addr, val)
+}
+
+func (r *Rom) Rs(uint16 addr) uint16 {
+	return r.data[addr] | (r.data[addr+1] << 8)
+}
+
+func (r *Rom) Ws(uint16 addr) uint16 {
+	log.Println("Attempt to write to ROM at %04Xh with val %04Xh ignored", addr, val)
+}
