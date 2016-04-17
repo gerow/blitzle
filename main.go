@@ -20,7 +20,7 @@ func main() {
 	}
 	fn := flag.Args()[0]
 
-	r, err := rom.Load(fn)
+	r, err := gb.LoadRom(fn)
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -1,9 +1,10 @@
-package rom
+package gb
 
 import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
+	"log"
 )
 
 var expectedLogo []byte = []byte{
@@ -12,6 +13,8 @@ var expectedLogo []byte = []byte{
 	0xDC, 0xCC, 0x6E, 0xE6, 0xDD, 0xDD, 0xD9, 0x99, 0xBB, 0xBB, 0x67, 0x63,
 	0x6E, 0x0E, 0xEC, 0xCC, 0xDD, 0xDC, 0x99, 0x9F, 0xBB, 0xB9, 0x33, 0x3E,
 }
+
+var romMask uint16 = (1 << 14) - 1
 
 type Rom struct {
 	data       []byte
@@ -22,7 +25,7 @@ type Rom struct {
 	ramSize    byte
 }
 
-func Load(fn string) (*Rom, error) {
+func LoadRom(fn string) (*Rom, error) {
 	data, err := ioutil.ReadFile(fn)
 	if err != nil {
 		return nil, err
@@ -94,18 +97,22 @@ func (r *Rom) Info() string {
 	return o.String()
 }
 
-func (r *Rom) Rb(uint16 addr) uint8 {
+func (r *Rom) Rb(addr uint16) uint8 {
 	return r.data[addr]
 }
 
-func (r *Rom) Wb(uint16 addr, uint8 val) {
+func (r *Rom) Wb(addr uint16, val uint8) {
 	log.Println("Attempt to write to ROM at %04Xh with val %02Xh ignored", addr, val)
 }
 
-func (r *Rom) Rs(uint16 addr) uint16 {
-	return r.data[addr] | (r.data[addr+1] << 8)
+func (r *Rom) Rs(addr uint16) uint16 {
+	return uint16(r.data[addr] | (r.data[addr+1] << 8))
 }
 
-func (r *Rom) Ws(uint16 addr) uint16 {
+func (r *Rom) Ws(addr uint16, val uint16) {
 	log.Println("Attempt to write to ROM at %04Xh with val %04Xh ignored", addr, val)
+}
+
+func (r *Rom) Asserts(addr uint16) bool {
+	return addr&romMask == 0x0000
 }
