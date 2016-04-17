@@ -1,16 +1,16 @@
 package gb
 
 type Video struct {
-	videoRam Ram
-	oam      Ram
+	videoRAM RAM
+	oam      RAM
 	devs     []BusDev
 }
 
 func NewVideo() *Video {
-	videoRam := NewRam(0x8000, 13)
-	oam := NewRam(0xfe00, 9)
-	devs := []BusDev{videoRam, oam}
-	return &Video{*videoRam, *oam, devs}
+	videoRAM := NewRAM(0x8000, 13)
+	oam := NewRAM(0xfe00, 9)
+	devs := []BusDev{videoRAM, oam}
+	return &Video{*videoRAM, *oam, devs}
 }
 
 func (v *Video) getHandler(addr uint16) BusDev {

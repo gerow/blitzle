@@ -16,7 +16,7 @@ var expectedLogo []byte = []byte{
 
 var romMask uint16 = (1 << 14) - 1
 
-type Rom struct {
+type ROM struct {
 	data       []byte
 	title      string
 	sgbSupport bool
@@ -25,12 +25,12 @@ type Rom struct {
 	ramSize    byte
 }
 
-func LoadRom(fn string) (*Rom, error) {
+func LoadROM(fn string) (*ROM, error) {
 	data, err := ioutil.ReadFile(fn)
 	if err != nil {
 		return nil, err
 	}
-	var r Rom
+	var r ROM
 	r.data = data
 	r.title = string(r.data[0x0134:0x0144])
 	r.sgbSupport = r.data[0x0146] == 0x03
@@ -40,7 +40,7 @@ func LoadRom(fn string) (*Rom, error) {
 	return &r, nil
 }
 
-func (r *Rom) HeaderChecksum() byte {
+func (r *ROM) HeaderChecksum() byte {
 	x := 0
 	for _, b := range r.data[0x0134:0x014d] {
 		x = x - int(b) - 1
@@ -49,7 +49,7 @@ func (r *Rom) HeaderChecksum() byte {
 	return byte(x & 0xff)
 }
 
-func (r *Rom) GlobalChecksum() uint16 {
+func (r *ROM) GlobalChecksum() uint16 {
 	x := 0
 	for _, b := range append(r.data[:0x014e], r.data[0x0150:]...) {
 		x += int(b)
@@ -58,7 +58,7 @@ func (r *Rom) GlobalChecksum() uint16 {
 	return uint16(x & 0xffff)
 }
 
-func (r *Rom) Info() string {
+func (r *ROM) Info() string {
 	o := bytes.Buffer{}
 	l := len(r.data)
 	o.WriteString(fmt.Sprintf("Title: %s\n", r.title))
@@ -97,22 +97,22 @@ func (r *Rom) Info() string {
 	return o.String()
 }
 
-func (r *Rom) Rb(addr uint16) uint8 {
+func (r *ROM) Rb(addr uint16) uint8 {
 	return r.data[addr]
 }
 
-func (r *Rom) Wb(addr uint16, val uint8) {
+func (r *ROM) Wb(addr uint16, val uint8) {
 	log.Println("Attempt to write to ROM at %04Xh with val %02Xh ignored", addr, val)
 }
 
-func (r *Rom) Rs(addr uint16) uint16 {
+func (r *ROM) Rs(addr uint16) uint16 {
 	return uint16(r.data[addr] | (r.data[addr+1] << 8))
 }
 
-func (r *Rom) Ws(addr uint16, val uint16) {
+func (r *ROM) Ws(addr uint16, val uint16) {
 	log.Println("Attempt to write to ROM at %04Xh with val %04Xh ignored", addr, val)
 }
 
-func (r *Rom) Asserts(addr uint16) bool {
+func (r *ROM) Asserts(addr uint16) bool {
 	return addr&romMask == 0x0000
 }

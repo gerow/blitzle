@@ -1,10 +1,11 @@
 package gb
 
 type Sys struct {
-	rom       Rom
-	systemRam SystemRam
-	hiRam     Ram
+	rom       ROM
+	systemRAM SystemRAM
+	hiRAM     RAM
 	video     Video
+	cpu       CPU
 	devs      []BusDev
 }
 
@@ -16,12 +17,13 @@ type BusDev interface {
 	Asserts(addr uint16) bool
 }
 
-func NewSys(rom Rom) *Sys {
-	systemRam := NewSystemRam()
-	hiRam := NewHiRam()
+func NewSys(rom ROM) *Sys {
+	systemRAM := NewSystemRAM()
+	hiRAM := NewHiRAM()
 	video := NewVideo()
-	devs := []BusDev{&rom, systemRam, hiRam, video}
-	return &Sys{rom, *systemRam, *hiRam, *video, devs}
+	cpu := NewCPU()
+	devs := []BusDev{&rom, systemRAM, hiRAM, video}
+	return &Sys{rom, *systemRAM, *hiRAM, *video, *cpu, devs}
 }
 
 func (s *Sys) IER() uint8 {
