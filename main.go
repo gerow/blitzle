@@ -25,4 +25,7 @@ func main() {
 		log.Fatal(err)
 	}
 	fmt.Print(r.Info())
+
+	sys := gb.NewSys(*r)
+	sys.Run()
 }

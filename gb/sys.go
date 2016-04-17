@@ -4,6 +4,7 @@ type Sys struct {
 	rom       Rom
 	systemRam SystemRam
 	hiRam     Ram
+	video     Video
 	devs      []BusDev
 }
 
@@ -18,12 +19,17 @@ type BusDev interface {
 func NewSys(rom Rom) *Sys {
 	systemRam := NewSystemRam()
 	hiRam := NewHiRam()
-	devs := []BusDev{&rom, systemRam, hiRam}
-	return &Sys{rom, *systemRam, *hiRam, devs}
+	video := NewVideo()
+	devs := []BusDev{&rom, systemRam, hiRam, video}
+	return &Sys{rom, *systemRam, *hiRam, *video, devs}
 }
 
 func (s *Sys) IER() uint8 {
 	return s.Rb(0xffff)
+}
+
+func (s *Sys) Run() {
+	return
 }
 
 func (s *Sys) getHandler(addr uint16) BusDev {
