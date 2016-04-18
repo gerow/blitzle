@@ -1,6 +1,9 @@
 package gb
 
-import "log"
+import (
+	"fmt"
+	"log"
+)
 
 type Sys struct {
 	rom       ROM
@@ -63,6 +66,7 @@ func (s *Sys) IER() uint8 {
 
 func (s *Sys) Run() {
 	for {
+		fmt.Print(s.cpu.State(s))
 		s.cpu.Step(s)
 	}
 }

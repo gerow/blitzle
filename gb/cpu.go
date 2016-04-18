@@ -1,5 +1,10 @@
 package gb
 
+import (
+	"bytes"
+	"fmt"
+)
+
 type CPU struct {
 	/* GP registers */
 	b  uint8
@@ -14,7 +19,9 @@ type CPU struct {
 }
 
 func NewCPU() *CPU {
-	return &CPU{}
+	cpu := &CPU{}
+	cpu.ip = 0x100
+	return cpu
 }
 
 func (c *CPU) Step(sys *Sys) int {
@@ -24,6 +31,31 @@ func (c *CPU) Step(sys *Sys) int {
 		return cbops[opcode](c, sys)
 	}
 	return ops[opcode](c, sys)
+}
+
+func (c *CPU) State(sys *Sys) string {
+	o := bytes.Buffer{}
+	o.WriteString(fmt.Sprintf("Registers\n"))
+	o.WriteString(fmt.Sprintf("  B:  %02Xh\n", c.b))
+	o.WriteString(fmt.Sprintf("  C:  %02Xh\n", c.c))
+	o.WriteString(fmt.Sprintf("  D:  %02Xh\n", c.d))
+	o.WriteString(fmt.Sprintf("  E:  %02Xh\n", c.e))
+	o.WriteString(fmt.Sprintf("  H:  %02Xh\n", c.h))
+	o.WriteString(fmt.Sprintf("  L:  %02Xh\n", c.l))
+	o.WriteString(fmt.Sprintf("  A:  %02Xh\n", c.a))
+	o.WriteString(fmt.Sprintf("  IP: %04Xh\n", c.ip))
+	o.WriteString(fmt.Sprintf("  SP: %04Xh\n", c.sp))
+	o.WriteString(fmt.Sprintf("Area around IP\n"))
+
+	for addr := c.ip - 10; addr < c.ip+10; addr++ {
+		ipChar := "*"
+		if addr != c.ip {
+			ipChar = " "
+		}
+		o.WriteString(fmt.Sprintf("%s%04Xh: %02Xh\n", ipChar, addr, sys.Rb(addr)))
+	}
+
+	return o.String()
 }
 
 type ByteRegister int
