@@ -177,22 +177,21 @@ func LDSImm(sr ShortRegister) OpFunc {
 func LDARegInd(br ShortRegister, mod int) OpFunc {
 	return func(cpu *CPU, sys *Sys) int {
 		addr := cpu.rrs(br)
-		v := sys.Rb(addr)
+		sys.Wb(addr, cpu.rrb(A))
 		if mod != 0 {
-			cpu.wrs(br, addr+uint16(mod))
+			cpu.wrs(br, uint16(int(addr)+mod))
 		}
-		cpu.wrb(A, v)
 
 		cpu.ip++
 		return 8
 	}
 }
 
-/* Increment short register */
-func INCS(sr ShortRegister) OpFunc {
+/* Increment or decrement short register */
+func INCDECS(sr ShortRegister, mod int) OpFunc {
 	return func(cpu *CPU, sys *Sys) int {
 		v := cpu.rrs(sr)
-		cpu.wrs(sr, v+1)
+		cpu.wrs(sr, uint16(int(v)+mod))
 
 		cpu.ip++
 		return 8
@@ -201,27 +200,27 @@ func INCS(sr ShortRegister) OpFunc {
 
 var ops [0x100]OpFunc = [0x100]OpFunc{
 	/* 0x00 */
-	NOP,
-	LDSImm(BC),
-	LDARegInd(BC, 0),
-	INCS(BC),
-	NOP,
-	NOP,
+	NOP,              /* NOP */
+	LDSImm(BC),       /* LD BC,d16 */
+	LDARegInd(BC, 0), /* LD (BC),A */
+	INCDECS(BC, 1),   /* INC BC */
 	NOP,
 	NOP,
 	NOP,
 	NOP,
 	NOP,
 	NOP,
+	NOP,
+	INCDECS(BC, -1), /* DEC BC */
 	NOP,
 	NOP,
 	NOP,
 	NOP,
 	/* 0x10 */
 	NOP,
-	LDSImm(DE),
-	LDARegInd(DE, 0),
-	INCS(DE),
+	LDSImm(DE),       /* LD DE,d16 */
+	LDARegInd(DE, 0), /* LD (DE),A */
+	INCDECS(DE, -1),  /* INC DE */
 	NOP,
 	NOP,
 	NOP,
@@ -229,16 +228,16 @@ var ops [0x100]OpFunc = [0x100]OpFunc{
 	NOP,
 	NOP,
 	NOP,
-	NOP,
+	INCDECS(DE, -1), /* DEC DE */
 	NOP,
 	NOP,
 	NOP,
 	NOP,
 	/* 0x20 */
 	NOP,
-	LDSImm(HL),
-	LDARegInd(HL, 1),
-	INCS(HL),
+	LDSImm(HL),       /* LD HL,d16 */
+	LDARegInd(HL, 1), /* LD (HL+),A */
+	INCDECS(HL, 1),   /* INC HL */
 	NOP,
 	NOP,
 	NOP,
@@ -246,16 +245,16 @@ var ops [0x100]OpFunc = [0x100]OpFunc{
 	NOP,
 	NOP,
 	NOP,
-	NOP,
+	INCDECS(HL, -1), /* DEC HL */
 	NOP,
 	NOP,
 	NOP,
 	NOP,
 	/* 0x30 */
 	NOP,
-	LDSImm(SP),
-	LDARegInd(HL, -1),
-	INCS(SP),
+	LDSImm(SP),        /* LD SP,d16 */
+	LDARegInd(HL, -1), /* LD (HL-),A */
+	INCDECS(SP, 1),    /* INC SP */
 	NOP,
 	NOP,
 	NOP,
@@ -263,7 +262,7 @@ var ops [0x100]OpFunc = [0x100]OpFunc{
 	NOP,
 	NOP,
 	NOP,
-	NOP,
+	INCDECS(SP, -1), /* DEC SP */
 	NOP,
 	NOP,
 	NOP,
