@@ -14,7 +14,7 @@ var expectedLogo []byte = []byte{
 	0x6E, 0x0E, 0xEC, 0xCC, 0xDD, 0xDC, 0x99, 0x9F, 0xBB, 0xB9, 0x33, 0x3E,
 }
 
-var romMask uint16 = (1 << 14) - 1
+var romMask uint16 = (1 << 15) - 1
 
 type ROM struct {
 	data       []byte
@@ -98,6 +98,7 @@ func (r *ROM) Info() string {
 }
 
 func (r *ROM) Rb(addr uint16) uint8 {
+	log.Printf("Read attempt of %04Xh in ROM\n", addr)
 	return r.data[addr]
 }
 
@@ -114,5 +115,5 @@ func (r *ROM) Ws(addr uint16, val uint16) {
 }
 
 func (r *ROM) Asserts(addr uint16) bool {
-	return addr&romMask == 0x0000
+	return addr&^romMask == 0x0000
 }

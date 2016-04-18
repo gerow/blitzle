@@ -28,7 +28,8 @@ type RAM struct {
 func NewRAM(startAddr uint16, addrBits uint8) *RAM {
 	mask := uint16((1 << addrBits) - 1)
 	size := 2 << addrBits
-	return &RAM{startAddr, make([]byte, size), mask}
+	data := make([]byte, size)
+	return &RAM{startAddr, data, mask}
 }
 
 func (r *RAM) Rb(addr uint16) uint8 {
@@ -53,7 +54,7 @@ func (r *RAM) Ws(addr uint16, val uint16) {
 }
 
 func (r *RAM) Asserts(addr uint16) bool {
-	return addr&r.mask == r.startAddr
+	return addr&^r.mask == r.startAddr
 }
 
 func NewHiRAM() *RAM {
