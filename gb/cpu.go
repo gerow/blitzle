@@ -317,6 +317,68 @@ func LDBImm(br ByteRegister) OpFunc {
 	}
 }
 
+func RLCA(cpu *CPU, sys *Sys) int {
+	a := cpu.rrb(A)
+	carry := a >> 7
+	a << 1
+	cpu.wrb(A, a)
+
+	cpu.fz = a == 0
+	cpu.fn = 0
+	cpu.fh = 0
+	cpu.fc = carry
+
+	cpu.ip++
+	return 4
+}
+
+func RLA(cpu *CPU, sys *Sys) int {
+	a := cpu.rrb(A)
+	carry := a >> 7
+	a << 1
+	if cpu.fc {
+		a |= 1
+	}
+	cpu.wrb(A, a)
+
+	cpu.fz = a == 0
+	cpu.fn = 0
+	cpu.fh = 0
+	cpu.fc = carry
+
+	cpu.ip++
+	return 4
+}
+
+/* Load SP via an imediate value that points to another value */
+func LDSPImmInd(cpu *CPU, sys *Sys) int {
+	sp := cpu.rrs(SP)
+	addr := sys.Rs(cpu.ip + 1)
+	sys.Ws(addr, sp)
+
+	cpu.ip += 3
+	return 20
+}
+
+/* Add short */
+func ADDS(sr ShortRegister) OpFunc {
+	return func(cpu *CPU, sys *Sys) int {
+		hl := cpu.rrs(HL)
+		val := cpu.rrs(sr)
+
+		spu.wrs(h + val)
+		h := uint8(hl >> 8)
+		valHigh = uint8(val >> 8)
+
+		cpu.fn = 0
+		cpu.fh = halfCarry(h, valHigh)
+		cpu.fc = carry(h, valHigh)
+
+		cpu.ip++
+		return 8
+	}
+}
+
 var ops [0x100]OpFunc = [0x100]OpFunc{
 	/* 0x00 */
 	NOP,              /* NOP */
@@ -326,9 +388,9 @@ var ops [0x100]OpFunc = [0x100]OpFunc{
 	INCDECB(B, 1),    /* INC B */
 	INCDECB(B, -1),   /* DEC B */
 	LDBImm(B),        /* LD B,d8 */
-	NOP,
-	NOP,
-	NOP,
+	RLCA,             /* RLCA */
+	LDSPImmInd,       /* LD (a16),SP */
+	ADDS(BC),         /* ADD HL,BC */
 	NOP,
 	INCDECS(BC, -1), /* DEC BC */
 	INCDECB(C, 1),   /* INC C */
@@ -343,9 +405,9 @@ var ops [0x100]OpFunc = [0x100]OpFunc{
 	INCDECB(D, 1),    /* INC D */
 	INCDECB(D, -1),   /* DEC D */
 	LDBImm(D),        /* LD D,d8 */
-	NOP,
-	JR(condNone), /* JR r8 */
-	NOP,
+	RLA,              /* RLA */
+	JR(condNone),     /* JR r8 */
+	ADDS(DE),         /* ADD HL,DE */
 	NOP,
 	INCDECS(DE, -1), /* DEC DE */
 	INCDECB(E, 1),   /* INC E */
@@ -362,7 +424,7 @@ var ops [0x100]OpFunc = [0x100]OpFunc{
 	LDBImm(H),        /* LD H,d8 */
 	NOP,
 	JR(condZ), /* JR Z,r8 */
-	NOP,
+	ADDS(HL),  /* ADD HL,HL */
 	NOP,
 	INCDECS(HL, -1), /* DEC HL */
 	INCDECB(L, 1),   /* INC L */
@@ -379,7 +441,7 @@ var ops [0x100]OpFunc = [0x100]OpFunc{
 	LDBImm(HLind),      /* LD (HL),d8 */
 	NOP,
 	JR(condC), /* JR C,r8 */
-	NOP,
+	ADDS(SP),  /* ADD HL,SP */
 	NOP,
 	INCDECS(SP, -1), /* DEC SP */
 	INCDECB(A, 1),   /* INC A */
