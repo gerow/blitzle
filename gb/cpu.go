@@ -301,6 +301,22 @@ func JR(con CPUCond) OpFunc {
 	}
 }
 
+/* Load byte immediate */
+func LDBImm(br ByteRegister) OpFunc {
+	return func(cpu *CPU, sys *Sys) int {
+		duration := 0
+		if br == HLind {
+			sys.Wb(cpu.rrs(HL), sys.Rb(cpu.ip+1))
+			duration = 12
+		} else {
+			cpu.wrb(br, sys.Rb(cpu.ip+1))
+			duration = 8
+		}
+		cpu.ip += 2
+		return duration
+	}
+}
+
 var ops [0x100]OpFunc = [0x100]OpFunc{
 	/* 0x00 */
 	NOP,              /* NOP */
@@ -309,7 +325,7 @@ var ops [0x100]OpFunc = [0x100]OpFunc{
 	INCDECS(BC, 1),   /* INC BC */
 	INCDECB(B, 1),    /* INC B */
 	INCDECB(B, -1),   /* DEC B */
-	NOP,
+	LDBImm(B),        /* LD B,d8 */
 	NOP,
 	NOP,
 	NOP,
@@ -317,7 +333,7 @@ var ops [0x100]OpFunc = [0x100]OpFunc{
 	INCDECS(BC, -1), /* DEC BC */
 	INCDECB(C, 1),   /* INC C */
 	INCDECB(C, -1),  /* DEC C */
-	NOP,
+	LDBImm(C),       /* LD C,d8 */
 	NOP,
 	/* 0x10 */
 	STOP,             /* STOP 0 */
@@ -326,7 +342,7 @@ var ops [0x100]OpFunc = [0x100]OpFunc{
 	INCDECS(DE, -1),  /* INC DE */
 	INCDECB(D, 1),    /* INC D */
 	INCDECB(D, -1),   /* DEC D */
-	NOP,
+	LDBImm(D),        /* LD D,d8 */
 	NOP,
 	JR(condNone), /* JR r8 */
 	NOP,
@@ -334,7 +350,7 @@ var ops [0x100]OpFunc = [0x100]OpFunc{
 	INCDECS(DE, -1), /* DEC DE */
 	INCDECB(E, 1),   /* INC E */
 	INCDECB(E, -1),  /* DEC E */
-	NOP,
+	LDBImm(E),       /* LD E,d8 */
 	NOP,
 	/* 0x20 */
 	JR(condNZ),       /* JR NZ,r8 */
@@ -343,7 +359,7 @@ var ops [0x100]OpFunc = [0x100]OpFunc{
 	INCDECS(HL, 1),   /* INC HL */
 	INCDECB(H, 1),    /* INC H */
 	INCDECB(H, -1),   /* DEC H */
-	NOP,
+	LDBImm(H),        /* LD H,d8 */
 	NOP,
 	JR(condZ), /* JR Z,r8 */
 	NOP,
@@ -351,7 +367,7 @@ var ops [0x100]OpFunc = [0x100]OpFunc{
 	INCDECS(HL, -1), /* DEC HL */
 	INCDECB(L, 1),   /* INC L */
 	INCDECB(L, -1),  /* DEC L */
-	NOP,
+	LDBImm(L),       /* LD L,d8 */
 	NOP,
 	/* 0x30 */
 	JR(condNC),         /* JR NC,r8 */
@@ -360,7 +376,7 @@ var ops [0x100]OpFunc = [0x100]OpFunc{
 	INCDECS(SP, 1),     /* INC SP */
 	INCDECB(HLind, 1),  /* INC (HL) */
 	INCDECB(HLind, -1), /* DEC (HL) */
-	NOP,
+	LDBImm(HLind),      /* LD (HL),d8 */
 	NOP,
 	JR(condC), /* JR C,r8 */
 	NOP,
@@ -368,7 +384,7 @@ var ops [0x100]OpFunc = [0x100]OpFunc{
 	INCDECS(SP, -1), /* DEC SP */
 	INCDECB(A, 1),   /* INC A */
 	INCDECB(A, -1),  /* DEC A */
-	NOP,
+	LDBImm(A),       /* LD A,d8 */
 	NOP,
 	/* 0x40 */
 	NOP,
