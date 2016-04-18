@@ -16,6 +16,20 @@ type CPU struct {
 	a  uint8
 	ip uint16
 	sp uint16
+
+	/* Flags */
+	fz bool
+	fn bool
+	fh bool
+	fc bool
+}
+
+func halfCarry(a uint8, b uint8) bool {
+	return (a&0xf+b&0xf)&0x10 != 0
+}
+
+func carry(a uint8, b uint8) bool {
+	return uint16(a)+uint16(b)&0x100 != 0
 }
 
 func NewCPU() *CPU {
@@ -68,6 +82,7 @@ const (
 	H
 	L
 	A
+	HLind
 )
 
 /* Read register byte */
@@ -198,22 +213,45 @@ func INCDECS(sr ShortRegister, mod int) OpFunc {
 	}
 }
 
+/* Increment or decrement byte register */
+func INCDECB(br ByteRegister, mod int) OpFunc {
+	return func(cpu *CPU, sys *Sys) int {
+		var v uint8
+		if br == HLind {
+			v = sys.Rb(cpu.rrs(HL))
+			sys.Wb(cpu.rrs(HL), uint8(int(v)+mod))
+		} else {
+			v = cpu.rrb(br)
+			cpu.wrb(br, uint8(int(v)+mod))
+		}
+		cpu.fz = v == 0
+		cpu.fn = mod == -1
+		cpu.fh = halfCarry(v, uint8(mod))
+
+		cpu.ip++
+		if br == HLind {
+			return 12
+		}
+		return 4
+	}
+}
+
 var ops [0x100]OpFunc = [0x100]OpFunc{
 	/* 0x00 */
 	NOP,              /* NOP */
 	LDSImm(BC),       /* LD BC,d16 */
 	LDARegInd(BC, 0), /* LD (BC),A */
 	INCDECS(BC, 1),   /* INC BC */
-	NOP,
-	NOP,
+	INCDECB(B, 1),    /* INC B */
+	INCDECB(B, -1),   /* DEC B */
 	NOP,
 	NOP,
 	NOP,
 	NOP,
 	NOP,
 	INCDECS(BC, -1), /* DEC BC */
-	NOP,
-	NOP,
+	INCDECB(C, 1),   /* INC C */
+	INCDECB(C, -1),  /* DEC C */
 	NOP,
 	NOP,
 	/* 0x10 */
@@ -221,16 +259,16 @@ var ops [0x100]OpFunc = [0x100]OpFunc{
 	LDSImm(DE),       /* LD DE,d16 */
 	LDARegInd(DE, 0), /* LD (DE),A */
 	INCDECS(DE, -1),  /* INC DE */
-	NOP,
-	NOP,
+	INCDECB(D, 1),    /* INC D */
+	INCDECB(D, -1),   /* DEC D */
 	NOP,
 	NOP,
 	NOP,
 	NOP,
 	NOP,
 	INCDECS(DE, -1), /* DEC DE */
-	NOP,
-	NOP,
+	INCDECB(E, 1),   /* INC E */
+	INCDECB(E, -1),  /* DEC E */
 	NOP,
 	NOP,
 	/* 0x20 */
@@ -238,33 +276,33 @@ var ops [0x100]OpFunc = [0x100]OpFunc{
 	LDSImm(HL),       /* LD HL,d16 */
 	LDARegInd(HL, 1), /* LD (HL+),A */
 	INCDECS(HL, 1),   /* INC HL */
-	NOP,
-	NOP,
+	INCDECB(H, 1),    /* INC H */
+	INCDECB(H, -1),   /* DEC H */
 	NOP,
 	NOP,
 	NOP,
 	NOP,
 	NOP,
 	INCDECS(HL, -1), /* DEC HL */
-	NOP,
-	NOP,
+	INCDECB(L, 1),   /* INC L */
+	INCDECB(L, -1),  /* DEC L */
 	NOP,
 	NOP,
 	/* 0x30 */
 	NOP,
-	LDSImm(SP),        /* LD SP,d16 */
-	LDARegInd(HL, -1), /* LD (HL-),A */
-	INCDECS(SP, 1),    /* INC SP */
-	NOP,
-	NOP,
+	LDSImm(SP),         /* LD SP,d16 */
+	LDARegInd(HL, -1),  /* LD (HL-),A */
+	INCDECS(SP, 1),     /* INC SP */
+	INCDECB(HLind, 1),  /* INC (HL) */
+	INCDECB(HLind, -1), /* DEC (HL) */
 	NOP,
 	NOP,
 	NOP,
 	NOP,
 	NOP,
 	INCDECS(SP, -1), /* DEC SP */
-	NOP,
-	NOP,
+	INCDECB(A, 1),   /* INC A */
+	INCDECB(A, -1),  /* DEC A */
 	NOP,
 	NOP,
 	/* 0x40 */
