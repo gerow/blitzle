@@ -319,13 +319,13 @@ func LDBImm(br ByteRegister) OpFunc {
 
 func RLCA(cpu *CPU, sys *Sys) int {
 	a := cpu.rrb(A)
-	carry := a >> 7
-	a << 1
+	carry := a>>7 != 0
+	a <<= 1
 	cpu.wrb(A, a)
 
 	cpu.fz = a == 0
-	cpu.fn = 0
-	cpu.fh = 0
+	cpu.fn = false
+	cpu.fh = false
 	cpu.fc = carry
 
 	cpu.ip++
@@ -334,16 +334,16 @@ func RLCA(cpu *CPU, sys *Sys) int {
 
 func RLA(cpu *CPU, sys *Sys) int {
 	a := cpu.rrb(A)
-	carry := a >> 7
-	a << 1
+	carry := a>>7 != 0
+	a <<= 1
 	if cpu.fc {
 		a |= 1
 	}
 	cpu.wrb(A, a)
 
 	cpu.fz = a == 0
-	cpu.fn = 0
-	cpu.fh = 0
+	cpu.fn = false
+	cpu.fh = false
 	cpu.fc = carry
 
 	cpu.ip++
@@ -366,13 +366,26 @@ func ADDS(sr ShortRegister) OpFunc {
 		hl := cpu.rrs(HL)
 		val := cpu.rrs(sr)
 
-		spu.wrs(h + val)
+		cpu.wrs(HL, hl+val)
 		h := uint8(hl >> 8)
-		valHigh = uint8(val >> 8)
+		valHigh := uint8(val >> 8)
 
-		cpu.fn = 0
+		cpu.fn = false
 		cpu.fh = halfCarry(h, valHigh)
 		cpu.fc = carry(h, valHigh)
+
+		cpu.ip++
+		return 8
+	}
+}
+
+func LDBInd(destReg ByteRegister, srcAddrReg ShortRegister, mod int) OpFunc {
+	return func(cpu *CPU, sys *Sys) int {
+		addr := cpu.rrs(srcAddrReg)
+		cpu.wrb(A, sys.Rb(addr))
+		if mod != 0 {
+			cpu.wrs(srcAddrReg, addr+1)
+		}
 
 		cpu.ip++
 		return 8
@@ -391,11 +404,11 @@ var ops [0x100]OpFunc = [0x100]OpFunc{
 	RLCA,             /* RLCA */
 	LDSPImmInd,       /* LD (a16),SP */
 	ADDS(BC),         /* ADD HL,BC */
-	NOP,
-	INCDECS(BC, -1), /* DEC BC */
-	INCDECB(C, 1),   /* INC C */
-	INCDECB(C, -1),  /* DEC C */
-	LDBImm(C),       /* LD C,d8 */
+	LDBInd(A, BC, 0), /* LD A,(BC) */
+	INCDECS(BC, -1),  /* DEC BC */
+	INCDECB(C, 1),    /* INC C */
+	INCDECB(C, -1),   /* DEC C */
+	LDBImm(C),        /* LD C,d8 */
 	NOP,
 	/* 0x10 */
 	STOP,             /* STOP 0 */
@@ -408,11 +421,11 @@ var ops [0x100]OpFunc = [0x100]OpFunc{
 	RLA,              /* RLA */
 	JR(condNone),     /* JR r8 */
 	ADDS(DE),         /* ADD HL,DE */
-	NOP,
-	INCDECS(DE, -1), /* DEC DE */
-	INCDECB(E, 1),   /* INC E */
-	INCDECB(E, -1),  /* DEC E */
-	LDBImm(E),       /* LD E,d8 */
+	LDBInd(A, DE, 0), /* LD A,(DE) */
+	INCDECS(DE, -1),  /* DEC DE */
+	INCDECB(E, 1),    /* INC E */
+	INCDECB(E, -1),   /* DEC E */
+	LDBImm(E),        /* LD E,d8 */
 	NOP,
 	/* 0x20 */
 	JR(condNZ),       /* JR NZ,r8 */
@@ -423,13 +436,13 @@ var ops [0x100]OpFunc = [0x100]OpFunc{
 	INCDECB(H, -1),   /* DEC H */
 	LDBImm(H),        /* LD H,d8 */
 	NOP,
-	JR(condZ), /* JR Z,r8 */
-	ADDS(HL),  /* ADD HL,HL */
-	NOP,
-	INCDECS(HL, -1), /* DEC HL */
-	INCDECB(L, 1),   /* INC L */
-	INCDECB(L, -1),  /* DEC L */
-	LDBImm(L),       /* LD L,d8 */
+	JR(condZ),        /* JR Z,r8 */
+	ADDS(HL),         /* ADD HL,HL */
+	LDBInd(A, HL, 1), /* LD A,(HL+) */
+	INCDECS(HL, -1),  /* DEC HL */
+	INCDECB(L, 1),    /* INC L */
+	INCDECB(L, -1),   /* DEC L */
+	LDBImm(L),        /* LD L,d8 */
 	NOP,
 	/* 0x30 */
 	JR(condNC),         /* JR NC,r8 */
@@ -440,13 +453,13 @@ var ops [0x100]OpFunc = [0x100]OpFunc{
 	INCDECB(HLind, -1), /* DEC (HL) */
 	LDBImm(HLind),      /* LD (HL),d8 */
 	NOP,
-	JR(condC), /* JR C,r8 */
-	ADDS(SP),  /* ADD HL,SP */
-	NOP,
-	INCDECS(SP, -1), /* DEC SP */
-	INCDECB(A, 1),   /* INC A */
-	INCDECB(A, -1),  /* DEC A */
-	LDBImm(A),       /* LD A,d8 */
+	JR(condC),         /* JR C,r8 */
+	ADDS(SP),          /* ADD HL,SP */
+	LDBInd(A, HL, -1), /* LD A,(HL-) */
+	INCDECS(SP, -1),   /* DEC SP */
+	INCDECB(A, 1),     /* INC A */
+	INCDECB(A, -1),    /* DEC A */
+	LDBImm(A),         /* LD A,d8 */
 	NOP,
 	/* 0x40 */
 	NOP,
@@ -455,6 +468,7 @@ var ops [0x100]OpFunc = [0x100]OpFunc{
 	NOP,
 	NOP,
 	NOP,
+	LDBInd(B, HL, 0), /* LD B,(HL) */
 	NOP,
 	NOP,
 	NOP,
@@ -462,8 +476,7 @@ var ops [0x100]OpFunc = [0x100]OpFunc{
 	NOP,
 	NOP,
 	NOP,
-	NOP,
-	NOP,
+	LDBInd(C, HL, 0), /* LD C,(HL) */
 	NOP,
 	/* 0x50 */
 	NOP,
@@ -472,6 +485,7 @@ var ops [0x100]OpFunc = [0x100]OpFunc{
 	NOP,
 	NOP,
 	NOP,
+	LDBInd(D, HL, 0), /* LD D,(HL) */
 	NOP,
 	NOP,
 	NOP,
@@ -479,8 +493,7 @@ var ops [0x100]OpFunc = [0x100]OpFunc{
 	NOP,
 	NOP,
 	NOP,
-	NOP,
-	NOP,
+	LDBInd(E, HL, 0), /* LD E,(HL) */
 	NOP,
 	/* 0x60 */
 	NOP,
@@ -489,6 +502,7 @@ var ops [0x100]OpFunc = [0x100]OpFunc{
 	NOP,
 	NOP,
 	NOP,
+	LDBInd(H, HL, 0), /* LD H,(HL) */
 	NOP,
 	NOP,
 	NOP,
@@ -496,8 +510,7 @@ var ops [0x100]OpFunc = [0x100]OpFunc{
 	NOP,
 	NOP,
 	NOP,
-	NOP,
-	NOP,
+	LDBInd(L, HL, 0), /* LD L,(HL) */
 	NOP,
 	/* 0x70 */
 	NOP,
@@ -514,7 +527,7 @@ var ops [0x100]OpFunc = [0x100]OpFunc{
 	NOP,
 	NOP,
 	NOP,
-	NOP,
+	LDBInd(A, HL, 0), /* LD A,(HL) */
 	NOP,
 	/* 0x80 */
 	NOP,
