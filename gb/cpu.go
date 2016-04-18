@@ -32,10 +32,45 @@ func carry(a uint8, b uint8) bool {
 	return uint16(a)+uint16(b)&0x100 != 0
 }
 
+func signExtend(a uint8) uint16 {
+	if a&0x80 != 0 {
+		return 0xff00 | uint16(a)
+	}
+
+	return uint16(a)
+}
+
 func NewCPU() *CPU {
 	cpu := &CPU{}
 	cpu.ip = 0x100
 	return cpu
+}
+
+type CPUCond int
+
+const (
+	condC CPUCond = iota
+	condNC
+	condZ
+	condNZ
+	condNone
+)
+
+func (c *CPU) cond(con CPUCond) bool {
+	switch con {
+	case condC:
+		return c.fc
+	case condNC:
+		return !c.fc
+	case condZ:
+		return c.fz
+	case condNZ:
+		return !c.fz
+	case condNone:
+		return true
+	default:
+		panic("received invalid con")
+	}
 }
 
 func (c *CPU) Step(sys *Sys) int {
@@ -179,6 +214,14 @@ func NOP(cpu *CPU, sys *Sys) int {
 	return 4
 }
 
+func STOP(cpu *CPU, sys *Sys) int {
+	sys.Stop = true
+
+	/* This technically takes an immediate argument, but it doesn't do anything */
+	cpu.ip += 2
+	return 4
+}
+
 /* Load short immediate */
 func LDSImm(sr ShortRegister) OpFunc {
 	return func(cpu *CPU, sys *Sys) int {
@@ -236,6 +279,28 @@ func INCDECB(br ByteRegister, mod int) OpFunc {
 	}
 }
 
+func JR(con CPUCond) OpFunc {
+	return func(cpu *CPU, sys *Sys) int {
+		j := signExtend(sys.Rb(cpu.ip + 1))
+		duration := 0
+		if cpu.cond(con) {
+			cpu.ip += j
+			duration = 12
+		} else {
+			cpu.ip += 2
+			duration = 8
+		}
+		/*
+		 * Apparently the unconditional JR takes 12 reguardless?
+		 * That doesn't sound right...
+		 */
+		if con == condNone {
+			duration = 12
+		}
+		return duration
+	}
+}
+
 var ops [0x100]OpFunc = [0x100]OpFunc{
 	/* 0x00 */
 	NOP,              /* NOP */
@@ -255,7 +320,7 @@ var ops [0x100]OpFunc = [0x100]OpFunc{
 	NOP,
 	NOP,
 	/* 0x10 */
-	NOP,
+	STOP,             /* STOP 0 */
 	LDSImm(DE),       /* LD DE,d16 */
 	LDARegInd(DE, 0), /* LD (DE),A */
 	INCDECS(DE, -1),  /* INC DE */
@@ -263,7 +328,7 @@ var ops [0x100]OpFunc = [0x100]OpFunc{
 	INCDECB(D, -1),   /* DEC D */
 	NOP,
 	NOP,
-	NOP,
+	JR(condNone), /* JR r8 */
 	NOP,
 	NOP,
 	INCDECS(DE, -1), /* DEC DE */
@@ -272,7 +337,7 @@ var ops [0x100]OpFunc = [0x100]OpFunc{
 	NOP,
 	NOP,
 	/* 0x20 */
-	NOP,
+	JR(condNZ),       /* JR NZ,r8 */
 	LDSImm(HL),       /* LD HL,d16 */
 	LDARegInd(HL, 1), /* LD (HL+),A */
 	INCDECS(HL, 1),   /* INC HL */
@@ -280,7 +345,7 @@ var ops [0x100]OpFunc = [0x100]OpFunc{
 	INCDECB(H, -1),   /* DEC H */
 	NOP,
 	NOP,
-	NOP,
+	JR(condZ), /* JR Z,r8 */
 	NOP,
 	NOP,
 	INCDECS(HL, -1), /* DEC HL */
@@ -289,7 +354,7 @@ var ops [0x100]OpFunc = [0x100]OpFunc{
 	NOP,
 	NOP,
 	/* 0x30 */
-	NOP,
+	JR(condNC),         /* JR NC,r8 */
 	LDSImm(SP),         /* LD SP,d16 */
 	LDARegInd(HL, -1),  /* LD (HL-),A */
 	INCDECS(SP, 1),     /* INC SP */
@@ -297,7 +362,7 @@ var ops [0x100]OpFunc = [0x100]OpFunc{
 	INCDECB(HLind, -1), /* DEC (HL) */
 	NOP,
 	NOP,
-	NOP,
+	JR(condC), /* JR C,r8 */
 	NOP,
 	NOP,
 	INCDECS(SP, -1), /* DEC SP */

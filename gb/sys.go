@@ -12,6 +12,7 @@ type Sys struct {
 	video     Video
 	cpu       CPU
 	devs      []BusDev
+	Stop      bool
 }
 
 type BusDev interface {
@@ -57,7 +58,7 @@ func NewSys(rom ROM) *Sys {
 	cpu := NewCPU()
 	bh1 := NewBusHole(0xa000, 13)
 	devs := []BusDev{&rom, systemRAM, hiRAM, video, bh1}
-	return &Sys{rom, *systemRAM, *hiRAM, *video, *cpu, devs}
+	return &Sys{rom, *systemRAM, *hiRAM, *video, *cpu, devs, false}
 }
 
 func (s *Sys) IER() uint8 {
