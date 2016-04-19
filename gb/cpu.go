@@ -428,6 +428,7 @@ func RRA(cpu *CPU, sys *Sys) int {
 /* Decimal adjust A */
 func DAA(cpu *CPU, sys *Sys) int {
 	a := cpu.rrb(A)
+	carry := a > 99
 	tens := a / 10
 	a -= tens * 10
 	ones := a
@@ -435,6 +436,10 @@ func DAA(cpu *CPU, sys *Sys) int {
 	/* I don't actually know how the CPU handles bad cases */
 	newA := tens<<4 | ones
 	cpu.wrb(A, newA)
+
+	cpu.fz = newA == 0
+	cpu.fh = false
+	cpu.fc = carry
 
 	cpu.ip++
 	return 4
