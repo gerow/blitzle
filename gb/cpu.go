@@ -392,6 +392,39 @@ func LDBInd(destReg ByteRegister, srcAddrReg ShortRegister, mod int) OpFunc {
 	}
 }
 
+func RRCA(cpu *CPU, sys *Sys) int {
+	a := cpu.rrb(A)
+	carry := a&1 != 0
+	a >>= 1
+	cpu.wrb(A, a)
+
+	cpu.fz = a == 0
+	cpu.fn = false
+	cpu.fh = false
+	cpu.fc = carry
+
+	cpu.ip++
+	return 4
+}
+
+func RRA(cpu *CPU, sys *Sys) int {
+	a := cpu.rrb(A)
+	carry := a&1 != 0
+	a >>= 1
+	if cpu.fc {
+		a |= 0x80
+	}
+	cpu.wrb(A, a)
+
+	cpu.fz = a == 0
+	cpu.fn = false
+	cpu.fh = false
+	cpu.fc = carry
+
+	cpu.ip++
+	return 4
+}
+
 var ops [0x100]OpFunc = [0x100]OpFunc{
 	/* 0x00 */
 	NOP,              /* NOP */
@@ -409,7 +442,7 @@ var ops [0x100]OpFunc = [0x100]OpFunc{
 	INCDECB(C, 1),    /* INC C */
 	INCDECB(C, -1),   /* DEC C */
 	LDBImm(C),        /* LD C,d8 */
-	NOP,
+	RRCA,             /* RRCA */
 	/* 0x10 */
 	STOP,             /* STOP 0 */
 	LDSImm(DE),       /* LD DE,d16 */
@@ -426,7 +459,7 @@ var ops [0x100]OpFunc = [0x100]OpFunc{
 	INCDECB(E, 1),    /* INC E */
 	INCDECB(E, -1),   /* DEC E */
 	LDBImm(E),        /* LD E,d8 */
-	NOP,
+	RRA,              /* RRA */
 	/* 0x20 */
 	JR(condNZ),       /* JR NZ,r8 */
 	LDSImm(HL),       /* LD HL,d16 */
