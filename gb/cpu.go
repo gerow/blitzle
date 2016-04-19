@@ -789,6 +789,16 @@ func PUSH(sr ShortRegister) OpFunc {
 	}
 }
 
+func RST(addr uint16) OpFunc {
+	return func(cpu *CPU, sys *Sys) int {
+		sys.Ws(cpu.sp, cpu.ip+1)
+		cpu.sp -= 2
+		cpu.ip = addr
+
+		return 16
+	}
+}
+
 var ops [0x100]OpFunc = [0x100]OpFunc{
 	/* 0x00 */
 	NOP,              /* NOP */
@@ -995,14 +1005,14 @@ var ops [0x100]OpFunc = [0x100]OpFunc{
 	ALU(CP, HLind), /* CP A,(HL) */
 	ALU(CP, A),     /* CP A,A */
 	/* 0xc0 */
-	RET(condNZ, false), /* RET NZ */
-	POP(BC),            /* POP BC */
-	JP(condNZ),         /* JP NZ,a16 */
-	JP(condNone),       /* JP a16 */
-	CALL(condNZ),       /* CALL NZ,a16 */
-	PUSH(BC),           /* PUSH BC */
-	ALU(ADD, Imm),      /* ADD A,d8 */
-	NOP,
+	RET(condNZ, false),   /* RET NZ */
+	POP(BC),              /* POP BC */
+	JP(condNZ),           /* JP NZ,a16 */
+	JP(condNone),         /* JP a16 */
+	CALL(condNZ),         /* CALL NZ,a16 */
+	PUSH(BC),             /* PUSH BC */
+	ALU(ADD, Imm),        /* ADD A,d8 */
+	RST(0x00),            /* RST 00H */
 	RET(condZ, false),    /* RET Z */
 	RET(condNone, false), /* RET */
 	JP(condZ),            /* JP Z,a16 */
@@ -1010,16 +1020,16 @@ var ops [0x100]OpFunc = [0x100]OpFunc{
 	CALL(condZ),    /* CALL Z,a16 */
 	CALL(condNone), /* CALL a16 */
 	ALU(ADC, Imm),  /* ADC A,d8 */
-	NOP,
+	RST(0x08),      /* RST 08H */
 	/* 0xd0 */
 	RET(condNC, false), /* RET NC */
 	POP(DE),            /* POP DE */
 	JP(condNC),         /* JP NC,a16 */
 	NOP,
-	CALL(condNC),  /* CALL NC,a16 */
-	PUSH(DE),      /* PUSH DE */
-	ALU(SUB, Imm), /* SUB A,d8 */
-	NOP,
+	CALL(condNC),        /* CALL NC,a16 */
+	PUSH(DE),            /* PUSH DE */
+	ALU(SUB, Imm),       /* SUB A,d8 */
+	RST(0x10),           /* RST 10H */
 	RET(condC, false),   /* RET C */
 	RET(condNone, true), /* RETI */
 	JP(condC),           /* JP C,a16 */
@@ -1027,7 +1037,7 @@ var ops [0x100]OpFunc = [0x100]OpFunc{
 	CALL(condC), /* CALL C,a16 */
 	NOP,
 	ALU(SBC, Imm), /* SBC A,d8 */
-	NOP,
+	RST(0x18),     /* RST 18H */
 	/* 0xe0 */
 	NOP,
 	POP(HL), /* POP HL */
@@ -1036,7 +1046,7 @@ var ops [0x100]OpFunc = [0x100]OpFunc{
 	NOP,
 	PUSH(HL),      /* PUSH HL */
 	ALU(AND, Imm), /* AND A,d8 */
-	NOP,
+	RST(0x20),     /* RST 20H */
 	NOP,
 	JPHLind, /* JP (HL) */
 	NOP,
@@ -1044,7 +1054,7 @@ var ops [0x100]OpFunc = [0x100]OpFunc{
 	NOP,
 	NOP,
 	ALU(XOR, Imm), /* XOR A,d8 */
-	NOP,
+	RST(0x28),     /* RST 28H */
 	/* 0xf0 */
 	NOP,
 	POPAF, /* POP AF */
@@ -1053,7 +1063,7 @@ var ops [0x100]OpFunc = [0x100]OpFunc{
 	NOP,
 	PUSH(AF),     /* PUSH AF */
 	ALU(OR, Imm), /* OR A,d8 */
-	NOP,
+	RST(0x30),    /* RST 30H */
 	NOP,
 	NOP,
 	NOP,
@@ -1061,7 +1071,7 @@ var ops [0x100]OpFunc = [0x100]OpFunc{
 	NOP,
 	NOP,
 	ALU(CP, Imm), /* CP A,d8 */
-	NOP,
+	RST(0x38),    /* RST 38H */
 }
 
 var cbops [0x100]OpFunc = [0x100]OpFunc{
