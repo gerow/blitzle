@@ -716,6 +716,13 @@ func CALL(con CPUCond) OpFunc {
 	}
 }
 
+func JPHLind(cpu *CPU, sys *Sys) int {
+	addr := sys.Rs(cpu.rrs(HL))
+	cpu.ip = addr
+
+	return 4
+}
+
 var ops [0x100]OpFunc = [0x100]OpFunc{
 	/* 0x00 */
 	NOP,              /* NOP */
@@ -965,7 +972,7 @@ var ops [0x100]OpFunc = [0x100]OpFunc{
 	ALU(AND, Imm), /* AND A,d8 */
 	NOP,
 	NOP,
-	NOP,
+	JPHLind, /* JP (HL) */
 	NOP,
 	NOP,
 	NOP,
