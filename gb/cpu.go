@@ -456,11 +456,20 @@ func SCF(cpu *CPU, sys *Sys) int {
 
 func CPL(cpu *CPU, sys *Sys) int {
 	cpu.a = ^cpu.a
-	cpu.ip++
 
 	cpu.fn = true
 	cpu.fh = true
 
+	cpu.ip++
+	return 4
+}
+
+func CCF(cpu *CPU, sys *Sys) int {
+	cpu.fn = false
+	cpu.fh = false
+	cpu.fc = !cpu.fc
+
+	cpu.ip++
 	return 4
 }
 
@@ -532,7 +541,7 @@ var ops [0x100]OpFunc = [0x100]OpFunc{
 	INCDECB(A, 1),      /* INC A */
 	INCDECB(A, -1),     /* DEC A */
 	LDBImm(A),          /* LD A,d8 */
-	NOP,
+	CCF,                /* CCF */
 	/* 0x40 */
 	NOP,
 	NOP,
