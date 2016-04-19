@@ -805,7 +805,7 @@ func PANIC(cpu *CPU, sys *Sys) int {
 }
 
 func DRAGONS(cpu *CPU, sys *Sys) int {
-	log.Printf("This syscall shouldn't exist!")
+	log.Printf("This op shouldn't exist!")
 
 	cpu.ip++
 	return 4
