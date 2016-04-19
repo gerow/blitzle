@@ -22,6 +22,8 @@ type CPU struct {
 	fn bool
 	fh bool
 	fc bool
+
+	halt bool
 }
 
 func halfCarry(a uint8, b uint8) bool {
@@ -495,6 +497,13 @@ func LDHLBindir(br ByteRegister) OpFunc {
 	}
 }
 
+func HALT(cpu *CPU, sys *Sys) int {
+	cpu.halt = true
+
+	cpu.ip++
+	return 4
+}
+
 var ops [0x100]OpFunc = [0x100]OpFunc{
 	/* 0x00 */
 	NOP,              /* NOP */
@@ -616,13 +625,13 @@ var ops [0x100]OpFunc = [0x100]OpFunc{
 	LDBInd(L, HL, 0), /* LD L,(HL) */
 	LDB(L, A),        /* LD L,A */
 	/* 0x70 */
-	LDHLBindir(B), /* LD (HL),B */
-	LDHLBindir(C), /* LD (HL),C */
-	LDHLBindir(D), /* LD (HL),D */
-	LDHLBindir(E), /* LD (HL),E */
-	LDHLBindir(H), /* LD (HL),H */
-	LDHLBindir(L), /* LD (HL),L */
-	NOP,
+	LDHLBindir(B),    /* LD (HL),B */
+	LDHLBindir(C),    /* LD (HL),C */
+	LDHLBindir(D),    /* LD (HL),D */
+	LDHLBindir(E),    /* LD (HL),E */
+	LDHLBindir(H),    /* LD (HL),H */
+	LDHLBindir(L),    /* LD (HL),L */
+	HALT,             /* HALT */
 	LDHLBindir(A),    /* LD (HL),A */
 	LDB(A, B),        /* LD A,B */
 	LDB(A, C),        /* LD A,C */
