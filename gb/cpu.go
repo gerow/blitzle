@@ -445,6 +445,25 @@ func DAA(cpu *CPU, sys *Sys) int {
 	return 4
 }
 
+func SCF(cpu *CPU, sys *Sys) int {
+	cpu.fn = false
+	cpu.fh = false
+	cpu.fc = true
+
+	cpu.ip++
+	return 4
+}
+
+func CPL(cpu *CPU, sys *Sys) int {
+	cpu.a = ^cpu.a
+	cpu.ip++
+
+	cpu.fn = true
+	cpu.fh = true
+
+	return 4
+}
+
 var ops [0x100]OpFunc = [0x100]OpFunc{
 	/* 0x00 */
 	NOP,              /* NOP */
@@ -488,7 +507,7 @@ var ops [0x100]OpFunc = [0x100]OpFunc{
 	INCDECB(H, 1),    /* INC H */
 	INCDECB(H, -1),   /* DEC H */
 	LDBImm(H),        /* LD H,d8 */
-	DAA,
+	DAA,              /* DAA */
 	JR(condZ),        /* JR Z,r8 */
 	ADDS(HL),         /* ADD HL,HL */
 	LDBInd(A, HL, 1), /* LD A,(HL+) */
@@ -496,7 +515,7 @@ var ops [0x100]OpFunc = [0x100]OpFunc{
 	INCDECB(L, 1),    /* INC L */
 	INCDECB(L, -1),   /* DEC L */
 	LDBImm(L),        /* LD L,d8 */
-	NOP,
+	CPL,              /* CPL */
 	/* 0x30 */
 	JR(condNC),         /* JR NC,r8 */
 	LDSImm(SP),         /* LD SP,d16 */
@@ -505,14 +524,14 @@ var ops [0x100]OpFunc = [0x100]OpFunc{
 	INCDECB(HLind, 1),  /* INC (HL) */
 	INCDECB(HLind, -1), /* DEC (HL) */
 	LDBImm(HLind),      /* LD (HL),d8 */
-	NOP,
-	JR(condC),         /* JR C,r8 */
-	ADDS(SP),          /* ADD HL,SP */
-	LDBInd(A, HL, -1), /* LD A,(HL-) */
-	INCDECS(SP, -1),   /* DEC SP */
-	INCDECB(A, 1),     /* INC A */
-	INCDECB(A, -1),    /* DEC A */
-	LDBImm(A),         /* LD A,d8 */
+	SCF,                /* SCF */
+	JR(condC),          /* JR C,r8 */
+	ADDS(SP),           /* ADD HL,SP */
+	LDBInd(A, HL, -1),  /* LD A,(HL-) */
+	INCDECS(SP, -1),    /* DEC SP */
+	INCDECB(A, 1),      /* INC A */
+	INCDECB(A, -1),     /* DEC A */
+	LDBImm(A),          /* LD A,d8 */
 	NOP,
 	/* 0x40 */
 	NOP,
