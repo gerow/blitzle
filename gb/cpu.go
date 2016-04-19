@@ -3,6 +3,7 @@ package gb
 import (
 	"bytes"
 	"fmt"
+	"log"
 )
 
 type CPU struct {
@@ -803,6 +804,13 @@ func PANIC(cpu *CPU, sys *Sys) int {
 	panic("This should never get called!")
 }
 
+func DRAGONS(cpu *CPU, sys *Sys) int {
+	log.Printf("This syscall shouldn't exist!")
+
+	cpu.ip++
+	return 4
+}
+
 var ops [0x100]OpFunc = [0x100]OpFunc{
 	/* 0x00 */
 	NOP,              /* NOP */
@@ -1026,10 +1034,10 @@ var ops [0x100]OpFunc = [0x100]OpFunc{
 	ALU(ADC, Imm),        /* ADC A,d8 */
 	RST(0x08),            /* RST 08H */
 	/* 0xd0 */
-	RET(condNC, false), /* RET NC */
-	POP(DE),            /* POP DE */
-	JP(condNC),         /* JP NC,a16 */
-	NOP,
+	RET(condNC, false),  /* RET NC */
+	POP(DE),             /* POP DE */
+	JP(condNC),          /* JP NC,a16 */
+	DRAGONS,             /* XXX */
 	CALL(condNC),        /* CALL NC,a16 */
 	PUSH(DE),            /* PUSH DE */
 	ALU(SUB, Imm),       /* SUB A,d8 */
@@ -1037,26 +1045,26 @@ var ops [0x100]OpFunc = [0x100]OpFunc{
 	RET(condC, false),   /* RET C */
 	RET(condNone, true), /* RETI */
 	JP(condC),           /* JP C,a16 */
-	NOP,
-	CALL(condC), /* CALL C,a16 */
-	NOP,
-	ALU(SBC, Imm), /* SBC A,d8 */
-	RST(0x18),     /* RST 18H */
+	DRAGONS,             /* XXX */
+	CALL(condC),         /* CALL C,a16 */
+	DRAGONS,             /* XXX */
+	ALU(SBC, Imm),       /* SBC A,d8 */
+	RST(0x18),           /* RST 18H */
 	/* 0xe0 */
 	NOP,
 	POP(HL), /* POP HL */
 	NOP,
-	NOP,
-	NOP,
+	DRAGONS,       /* XXX */
+	DRAGONS,       /* XXX */
 	PUSH(HL),      /* PUSH HL */
 	ALU(AND, Imm), /* AND A,d8 */
 	RST(0x20),     /* RST 20H */
 	NOP,
 	JPHLind, /* JP (HL) */
 	NOP,
-	NOP,
-	NOP,
-	NOP,
+	DRAGONS,       /* XXX */
+	DRAGONS,       /* XXX */
+	DRAGONS,       /* XXX */
 	ALU(XOR, Imm), /* XOR A,d8 */
 	RST(0x28),     /* RST 28H */
 	/* 0xf0 */
@@ -1064,7 +1072,7 @@ var ops [0x100]OpFunc = [0x100]OpFunc{
 	POPAF, /* POP AF */
 	NOP,
 	NOP,
-	NOP,
+	DRAGONS,      /* XXX */
 	PUSH(AF),     /* PUSH AF */
 	ALU(OR, Imm), /* OR A,d8 */
 	RST(0x30),    /* RST 30H */
@@ -1072,8 +1080,8 @@ var ops [0x100]OpFunc = [0x100]OpFunc{
 	NOP,
 	NOP,
 	NOP,
-	NOP,
-	NOP,
+	DRAGONS,      /* XXX */
+	DRAGONS,      /* XXX */
 	ALU(CP, Imm), /* CP A,d8 */
 	RST(0x38),    /* RST 38H */
 }
