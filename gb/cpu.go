@@ -484,6 +484,17 @@ func LDB(destReg ByteRegister, srcReg ByteRegister) OpFunc {
 	}
 }
 
+func LDHLBindir(br ByteRegister) OpFunc {
+	return func(cpu *CPU, sys *Sys) int {
+		val := cpu.rrb(br)
+		addr := cpu.rrs(HL)
+		sys.Wb(addr, val)
+
+		cpu.ip++
+		return 8
+	}
+}
+
 var ops [0x100]OpFunc = [0x100]OpFunc{
 	/* 0x00 */
 	NOP,              /* NOP */
@@ -605,22 +616,22 @@ var ops [0x100]OpFunc = [0x100]OpFunc{
 	LDBInd(L, HL, 0), /* LD L,(HL) */
 	LDB(L, A),        /* LD L,A */
 	/* 0x70 */
+	LDHLBindir(B), /* LD (HL),B */
+	LDHLBindir(C), /* LD (HL),C */
+	LDHLBindir(D), /* LD (HL),D */
+	LDHLBindir(E), /* LD (HL),E */
+	LDHLBindir(H), /* LD (HL),H */
+	LDHLBindir(L), /* LD (HL),L */
 	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
+	LDHLBindir(A),    /* LD (HL),A */
+	LDB(A, B),        /* LD A,B */
+	LDB(A, C),        /* LD A,C */
+	LDB(A, D),        /* LD A,D */
+	LDB(A, E),        /* LD A,E */
+	LDB(A, H),        /* LD A,H */
+	LDB(A, L),        /* LD A,L */
 	LDBInd(A, HL, 0), /* LD A,(HL) */
-	NOP,
+	LDB(A, A),        /* LD A,A */
 	/* 0x80 */
 	NOP,
 	NOP,
