@@ -23,7 +23,8 @@ type CPU struct {
 	fh bool
 	fc bool
 
-	halt bool
+	halt       bool
+	interrupts bool
 }
 
 func halfCarry(a uint8, b uint8) bool {
@@ -103,6 +104,7 @@ func signExtend(a uint8) uint16 {
 func NewCPU() *CPU {
 	cpu := &CPU{}
 	cpu.ip = 0x100
+	cpu.interrupts = true
 	return cpu
 }
 
@@ -666,6 +668,54 @@ func ALU(op ALUOp, br ByteRegister) OpFunc {
 	}
 }
 
+func RET(con CPUCond, enableInterrupts bool) OpFunc {
+	return func(cpu *CPU, sys *Sys) int {
+		if enableInterrupts {
+			cpu.interrupts = true
+		}
+		if cpu.cond(con) {
+			cpu.sp += 2
+			ra := sys.Rs(cpu.sp)
+			cpu.ip = ra
+			if con == condNone {
+				return 16
+			}
+			return 20
+		} else {
+			cpu.ip++
+			return 8
+		}
+	}
+}
+
+func JP(con CPUCond) OpFunc {
+	return func(cpu *CPU, sys *Sys) int {
+		addr := sys.Rs(cpu.ip + 1)
+		if cpu.cond(con) {
+			cpu.ip = addr
+			return 16
+		} else {
+			cpu.ip += 3
+			return 12
+		}
+	}
+}
+
+func CALL(con CPUCond) OpFunc {
+	return func(cpu *CPU, sys *Sys) int {
+		addr := sys.Rs(cpu.ip + 1)
+		if cpu.cond(con) {
+			sys.Ws(cpu.sp, cpu.ip+3)
+			cpu.sp -= 2
+			cpu.ip = addr
+			return 24
+		} else {
+			cpu.ip += 3
+			return 12
+		}
+	}
+}
+
 var ops [0x100]OpFunc = [0x100]OpFunc{
 	/* 0x00 */
 	NOP,              /* NOP */
@@ -872,7 +922,7 @@ var ops [0x100]OpFunc = [0x100]OpFunc{
 	ALU(CP, HLind), /* CP A,(HL) */
 	ALU(CP, A),     /* CP A,A */
 	/* 0xc0 */
-	NOP,
+	RET(condNZ, false), /* RET NZ */
 	NOP,
 	NOP,
 	NOP,
@@ -880,8 +930,8 @@ var ops [0x100]OpFunc = [0x100]OpFunc{
 	NOP,
 	ALU(ADD, Imm), /* ADD A,d8 */
 	NOP,
-	NOP,
-	NOP,
+	RET(condZ, false),    /* RET Z */
+	RET(condNone, false), /* RET */
 	NOP,
 	NOP,
 	NOP,
@@ -889,7 +939,7 @@ var ops [0x100]OpFunc = [0x100]OpFunc{
 	ALU(ADC, Imm), /* ADC A,d8 */
 	NOP,
 	/* 0xd0 */
-	NOP,
+	RET(condNC, false), /* RET NC */
 	NOP,
 	NOP,
 	NOP,
@@ -897,8 +947,8 @@ var ops [0x100]OpFunc = [0x100]OpFunc{
 	NOP,
 	ALU(SUB, Imm), /* SUB A,d8 */
 	NOP,
-	NOP,
-	NOP,
+	RET(condC, false),   /* RET C */
+	RET(condNone, true), /* RETI */
 	NOP,
 	NOP,
 	NOP,
