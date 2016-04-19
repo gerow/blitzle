@@ -799,6 +799,10 @@ func RST(addr uint16) OpFunc {
 	}
 }
 
+func PANIC(cpu *CPU, sys *Sys) int {
+	panic("This should never get called!")
+}
+
 var ops [0x100]OpFunc = [0x100]OpFunc{
 	/* 0x00 */
 	NOP,              /* NOP */
@@ -1016,11 +1020,11 @@ var ops [0x100]OpFunc = [0x100]OpFunc{
 	RET(condZ, false),    /* RET Z */
 	RET(condNone, false), /* RET */
 	JP(condZ),            /* JP Z,a16 */
-	NOP,
-	CALL(condZ),    /* CALL Z,a16 */
-	CALL(condNone), /* CALL a16 */
-	ALU(ADC, Imm),  /* ADC A,d8 */
-	RST(0x08),      /* RST 08H */
+	PANIC,                /* PREFIX CB */
+	CALL(condZ),          /* CALL Z,a16 */
+	CALL(condNone),       /* CALL a16 */
+	ALU(ADC, Imm),        /* ADC A,d8 */
+	RST(0x08),            /* RST 08H */
 	/* 0xd0 */
 	RET(condNC, false), /* RET NC */
 	POP(DE),            /* POP DE */
