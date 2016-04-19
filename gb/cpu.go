@@ -924,34 +924,34 @@ var ops [0x100]OpFunc = [0x100]OpFunc{
 	/* 0xc0 */
 	RET(condNZ, false), /* RET NZ */
 	NOP,
-	NOP,
-	NOP,
-	NOP,
+	JP(condNZ),   /* JP NZ,a16 */
+	JP(condNone), /* JP a16 */
+	CALL(condNZ), /* CALL NZ,a16 */
 	NOP,
 	ALU(ADD, Imm), /* ADD A,d8 */
 	NOP,
 	RET(condZ, false),    /* RET Z */
 	RET(condNone, false), /* RET */
+	JP(condZ),            /* JP Z,a16 */
 	NOP,
-	NOP,
-	NOP,
-	NOP,
-	ALU(ADC, Imm), /* ADC A,d8 */
+	CALL(condZ),    /* CALL Z,a16 */
+	CALL(condNone), /* CALL a16 */
+	ALU(ADC, Imm),  /* ADC A,d8 */
 	NOP,
 	/* 0xd0 */
 	RET(condNC, false), /* RET NC */
 	NOP,
+	JP(condNC), /* JP NC,a16 */
 	NOP,
-	NOP,
-	NOP,
+	CALL(condNC), /* CALL NC,a16 */
 	NOP,
 	ALU(SUB, Imm), /* SUB A,d8 */
 	NOP,
 	RET(condC, false),   /* RET C */
 	RET(condNone, true), /* RETI */
+	JP(condC),           /* JP C,a16 */
 	NOP,
-	NOP,
-	NOP,
+	CALL(condC), /* CALL C,a16 */
 	NOP,
 	ALU(SBC, Imm), /* SBC A,d8 */
 	NOP,
