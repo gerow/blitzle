@@ -107,7 +107,7 @@ func (r *ROM) Wb(addr uint16, val uint8) {
 }
 
 func (r *ROM) Rs(addr uint16) uint16 {
-	return uint16(r.data[addr] | (r.data[addr+1] << 8))
+	return uint16(r.data[addr]) | uint16(r.data[addr+1])<<8
 }
 
 func (r *ROM) Ws(addr uint16, val uint16) {

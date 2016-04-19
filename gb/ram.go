@@ -44,7 +44,7 @@ func (r *RAM) Wb(addr uint16, val uint8) {
 
 func (r *RAM) Rs(addr uint16) uint16 {
 	addr &= r.mask
-	return uint16(r.data[addr] | (r.data[addr+1] << 8))
+	return uint16(r.data[addr]) | uint16(r.data[addr+1])<<8
 }
 
 func (r *RAM) Ws(addr uint16, val uint16) {
