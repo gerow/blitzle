@@ -27,6 +27,31 @@ type CPU struct {
 	interrupts bool
 }
 
+func (c *CPU) flags() uint8 {
+	o := uint8(0)
+	if c.fz {
+		o |= 0x80
+	}
+	if c.fn {
+		o |= 0x40
+	}
+	if c.fh {
+		o |= 0x20
+	}
+	if c.fc {
+		o |= 0x10
+	}
+
+	return o
+}
+
+func (c *CPU) setFlags(val uint8) {
+	c.fz = val&0x80 != 0
+	c.fn = val&0x40 != 0
+	c.fh = val&0x20 != 0
+	c.fc = val&0x10 != 0
+}
+
 func halfCarry(a uint8, b uint8) bool {
 	return halfCarryWithC(a, b, false)
 }
@@ -105,6 +130,7 @@ func NewCPU() *CPU {
 	cpu := &CPU{}
 	cpu.ip = 0x100
 	cpu.interrupts = true
+	cpu.sp = 0xfffe
 	return cpu
 }
 
@@ -233,6 +259,7 @@ const (
 	DE
 	HL
 	SP
+	AF
 )
 
 func (c *CPU) rrs(sr ShortRegister) uint16 {
@@ -245,6 +272,8 @@ func (c *CPU) rrs(sr ShortRegister) uint16 {
 		return uint16(c.l) | uint16(c.h)<<8
 	case SP:
 		return c.sp
+	case AF:
+		return uint16(c.flags()) | uint16(c.a)<<8
 	default:
 		panic("received invalid sr")
 	}
@@ -723,6 +752,43 @@ func JPHLind(cpu *CPU, sys *Sys) int {
 	return 4
 }
 
+func POP(sr ShortRegister) OpFunc {
+	if sr == AF {
+		panic("no, that won't work!")
+	}
+
+	return func(cpu *CPU, sys *Sys) int {
+		cpu.sp -= 2
+		cpu.wrs(sr, sys.Rs(cpu.sp))
+
+		cpu.ip++
+		return 12
+	}
+}
+
+func POPAF(cpu *CPU, sys *Sys) int {
+	cpu.sp -= 2
+	af := sys.Rs(cpu.sp)
+	a := uint8(af >> 8)
+	f := uint8(af & 0xf)
+
+	cpu.setFlags(f)
+	cpu.a = a
+
+	cpu.ip++
+	return 12
+}
+
+func PUSH(sr ShortRegister) OpFunc {
+	return func(cpu *CPU, sys *Sys) int {
+		sys.Ws(cpu.sp, cpu.rrs(sr))
+		cpu.sp += 2
+
+		cpu.ip++
+		return 16
+	}
+}
+
 var ops [0x100]OpFunc = [0x100]OpFunc{
 	/* 0x00 */
 	NOP,              /* NOP */
@@ -930,12 +996,12 @@ var ops [0x100]OpFunc = [0x100]OpFunc{
 	ALU(CP, A),     /* CP A,A */
 	/* 0xc0 */
 	RET(condNZ, false), /* RET NZ */
-	NOP,
-	JP(condNZ),   /* JP NZ,a16 */
-	JP(condNone), /* JP a16 */
-	CALL(condNZ), /* CALL NZ,a16 */
-	NOP,
-	ALU(ADD, Imm), /* ADD A,d8 */
+	POP(BC),            /* POP BC */
+	JP(condNZ),         /* JP NZ,a16 */
+	JP(condNone),       /* JP a16 */
+	CALL(condNZ),       /* CALL NZ,a16 */
+	PUSH(BC),           /* PUSH BC */
+	ALU(ADD, Imm),      /* ADD A,d8 */
 	NOP,
 	RET(condZ, false),    /* RET Z */
 	RET(condNone, false), /* RET */
@@ -947,11 +1013,11 @@ var ops [0x100]OpFunc = [0x100]OpFunc{
 	NOP,
 	/* 0xd0 */
 	RET(condNC, false), /* RET NC */
+	POP(DE),            /* POP DE */
+	JP(condNC),         /* JP NC,a16 */
 	NOP,
-	JP(condNC), /* JP NC,a16 */
-	NOP,
-	CALL(condNC), /* CALL NC,a16 */
-	NOP,
+	CALL(condNC),  /* CALL NC,a16 */
+	PUSH(DE),      /* PUSH DE */
 	ALU(SUB, Imm), /* SUB A,d8 */
 	NOP,
 	RET(condC, false),   /* RET C */
@@ -964,11 +1030,11 @@ var ops [0x100]OpFunc = [0x100]OpFunc{
 	NOP,
 	/* 0xe0 */
 	NOP,
+	POP(HL), /* POP HL */
 	NOP,
 	NOP,
 	NOP,
-	NOP,
-	NOP,
+	PUSH(HL),      /* PUSH HL */
 	ALU(AND, Imm), /* AND A,d8 */
 	NOP,
 	NOP,
@@ -981,11 +1047,11 @@ var ops [0x100]OpFunc = [0x100]OpFunc{
 	NOP,
 	/* 0xf0 */
 	NOP,
+	POPAF, /* POP AF */
 	NOP,
 	NOP,
 	NOP,
-	NOP,
-	NOP,
+	PUSH(AF),     /* PUSH AF */
 	ALU(OR, Imm), /* OR A,d8 */
 	NOP,
 	NOP,
