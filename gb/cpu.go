@@ -473,6 +473,17 @@ func CCF(cpu *CPU, sys *Sys) int {
 	return 4
 }
 
+/* Load between byte registers */
+func LDB(destReg ByteRegister, srcReg ByteRegister) OpFunc {
+	return func(cpu *CPU, sys *Sys) int {
+		src := cpu.rrb(srcReg)
+		cpu.wrb(destReg, src)
+
+		cpu.ip++
+		return 4
+	}
+}
+
 var ops [0x100]OpFunc = [0x100]OpFunc{
 	/* 0x00 */
 	NOP,              /* NOP */
@@ -543,56 +554,56 @@ var ops [0x100]OpFunc = [0x100]OpFunc{
 	LDBImm(A),          /* LD A,d8 */
 	CCF,                /* CCF */
 	/* 0x40 */
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
+	LDB(B, B),        /* LD B,B */
+	LDB(B, C),        /* LD B,C */
+	LDB(B, D),        /* LD B,D */
+	LDB(B, E),        /* LD B,E */
+	LDB(B, H),        /* LD B,H */
+	LDB(B, L),        /* LD B,L */
 	LDBInd(B, HL, 0), /* LD B,(HL) */
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
+	LDB(B, A),        /* LD B,A */
+	LDB(C, B),        /* LD C,B */
+	LDB(C, C),        /* LD C,C */
+	LDB(C, D),        /* LD C,D */
+	LDB(C, E),        /* LD C,E */
+	LDB(C, H),        /* LD C,H */
+	LDB(C, L),        /* LD C,L */
 	LDBInd(C, HL, 0), /* LD C,(HL) */
-	NOP,
+	LDB(C, A),        /* LD C,A */
 	/* 0x50 */
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
+	LDB(D, B),        /* LD D,B */
+	LDB(D, C),        /* LD D,C */
+	LDB(D, D),        /* LD D,D */
+	LDB(D, E),        /* LD D,E */
+	LDB(D, H),        /* LD D,H */
+	LDB(D, L),        /* LD D,L */
 	LDBInd(D, HL, 0), /* LD D,(HL) */
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
+	LDB(D, A),        /* LD D,A */
+	LDB(E, B),        /* LD E,B */
+	LDB(E, C),        /* LD E,C */
+	LDB(E, D),        /* LD E,D */
+	LDB(E, E),        /* LD E,E */
+	LDB(E, H),        /* LD E,H */
+	LDB(E, L),        /* LD E,L */
 	LDBInd(E, HL, 0), /* LD E,(HL) */
-	NOP,
+	LDB(E, A),        /* LD E,A */
 	/* 0x60 */
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
+	LDB(H, B),        /* LD H,B */
+	LDB(H, C),        /* LD H,C */
+	LDB(H, D),        /* LD H,D */
+	LDB(H, E),        /* LD H,E */
+	LDB(H, H),        /* LD H,H */
+	LDB(H, L),        /* LD H,L */
 	LDBInd(H, HL, 0), /* LD H,(HL) */
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
+	LDB(H, A),        /* LD H,A */
+	LDB(L, B),        /* LD L,B */
+	LDB(L, C),        /* LD L,C */
+	LDB(L, D),        /* LD L,D */
+	LDB(L, E),        /* LD L,E */
+	LDB(L, H),        /* LD L,H */
+	LDB(L, L),        /* LD L,L */
 	LDBInd(L, HL, 0), /* LD L,(HL) */
-	NOP,
+	LDB(L, A),        /* LD L,A */
 	/* 0x70 */
 	NOP,
 	NOP,
