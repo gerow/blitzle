@@ -27,11 +27,69 @@ type CPU struct {
 }
 
 func halfCarry(a uint8, b uint8) bool {
-	return (a&0xf+b&0xf)&0x10 != 0
+	return halfCarryWithC(a, b, false)
+}
+
+func halfCarryWithC(a uint8, b uint8, c bool) bool {
+	var carryMod uint16
+	if c {
+		carryMod = 1
+	} else {
+		carryMod = 0
+	}
+	a16 := uint16(a) + carryMod
+	return (a16&0xf+uint16(b)&0xf)&0x10 != 0
 }
 
 func carry(a uint8, b uint8) bool {
-	return uint16(a)+uint16(b)&0x100 != 0
+	return carryWithC(a, b, false)
+}
+
+func carryWithC(a uint8, b uint8, c bool) bool {
+	var carryMod uint16
+	if c {
+		carryMod = 1
+	} else {
+		carryMod = 0
+	}
+	a16 := uint16(a) + carryMod
+	return uint16(a16)+uint16(b)&0x100 != 0
+}
+
+func halfBorrow(a uint8, b uint8) bool {
+	return halfBorrowWithC(a, b, false)
+}
+
+func halfBorrowWithC(a uint8, b uint8, c bool) bool {
+	var carryMod uint16
+	if c {
+		carryMod = 1
+	} else {
+		carryMod = 0
+	}
+	b16 := uint16(a) + carryMod
+	if b16&0xf > uint16(a)&0xf {
+		return true
+	}
+	return false
+}
+
+func borrow(a uint8, b uint8) bool {
+	return borrowWithC(a, b, false)
+}
+
+func borrowWithC(a uint8, b uint8, c bool) bool {
+	var carryMod uint16
+	if c {
+		carryMod = 1
+	} else {
+		carryMod = 0
+	}
+	b16 := uint16(a) + carryMod
+	if b16 > uint16(a) {
+		return true
+	}
+	return false
 }
 
 func signExtend(a uint8) uint16 {
@@ -120,6 +178,7 @@ const (
 	L
 	A
 	HLind
+	Imm
 )
 
 /* Read register byte */
@@ -188,6 +247,19 @@ func (c *CPU) rrs(sr ShortRegister) uint16 {
 		panic("received invalid sr")
 	}
 }
+
+type ALUOp int
+
+const (
+	ADD ALUOp = iota
+	ADC
+	SUB
+	SBC
+	AND
+	XOR
+	OR
+	CP
+)
 
 func (c *CPU) wrs(sr ShortRegister, v uint16) {
 	l := uint8(v & 0xff)
@@ -504,6 +576,96 @@ func HALT(cpu *CPU, sys *Sys) int {
 	return 4
 }
 
+func ALU(op ALUOp, br ByteRegister) OpFunc {
+	return func(cpu *CPU, sys *Sys) int {
+		var val uint8
+		var duration int
+		var iSize uint16
+		if br == HLind {
+			val = sys.Rb(cpu.rrs(HL))
+			duration = 8
+			iSize = 1
+		} else if br == Imm {
+			val = sys.Rb(cpu.ip + 1)
+			duration = 8
+			iSize = 2
+		} else {
+			val = cpu.rrb(br)
+			duration = 4
+			iSize = 1
+		}
+
+		var carryMod uint8
+		if cpu.fc {
+			carryMod = 1
+		} else {
+			carryMod = 0
+		}
+		var res uint8
+		switch op {
+		case ADD:
+			cpu.fn = false
+			cpu.fh = halfCarry(cpu.a, val)
+			cpu.fc = carry(cpu.a, val)
+
+			cpu.a += val
+		case ADC:
+			cpu.fn = false
+			cpu.fh = halfCarryWithC(cpu.a, val, cpu.fc)
+			cpu.fc = carryWithC(cpu.a, val, cpu.fc)
+
+			cpu.a += val + carryMod
+		case SUB:
+			cpu.fn = true
+			cpu.fh = !halfBorrow(cpu.a, val)
+			cpu.fc = !borrow(cpu.a, val)
+
+			cpu.a -= val
+		case SBC:
+			cpu.fn = true
+			cpu.fh = !halfBorrowWithC(cpu.a, val, cpu.fc)
+			cpu.fc = !borrowWithC(cpu.a, val, cpu.fc)
+
+			cpu.a -= val + carryMod
+		case AND:
+			cpu.fn = false
+			cpu.fh = true
+			cpu.fc = false
+
+			cpu.a &= val
+		case XOR:
+			cpu.fn = false
+			cpu.fh = false
+			cpu.fc = false
+
+			cpu.a ^= val
+		case OR:
+			cpu.fn = false
+			cpu.fh = false
+			cpu.fc = false
+
+			cpu.a |= val
+		case CP:
+			cpu.fn = true
+			cpu.fh = !halfBorrowWithC(cpu.a, val, cpu.fc)
+			cpu.fc = !borrowWithC(cpu.a, val, cpu.fc)
+
+			res = cpu.a - val
+		default:
+			panic("received invalid op")
+		}
+
+		if op == CP {
+			cpu.fz = res == 0
+		} else {
+			cpu.fz = cpu.a == 0
+		}
+
+		cpu.ip += iSize
+		return duration
+	}
+}
+
 var ops [0x100]OpFunc = [0x100]OpFunc{
 	/* 0x00 */
 	NOP,              /* NOP */
@@ -642,73 +804,73 @@ var ops [0x100]OpFunc = [0x100]OpFunc{
 	LDBInd(A, HL, 0), /* LD A,(HL) */
 	LDB(A, A),        /* LD A,A */
 	/* 0x80 */
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
+	ALU(ADD, B),     /* ADD A,B */
+	ALU(ADD, C),     /* ADD A,C */
+	ALU(ADD, D),     /* ADD A,D */
+	ALU(ADD, E),     /* ADD A,E */
+	ALU(ADD, H),     /* ADD A,H */
+	ALU(ADD, L),     /* ADD A,L */
+	ALU(ADD, HLind), /* ADD A,(HL) */
+	ALU(ADD, A),     /* ADD A,A */
+	ALU(ADC, B),     /* ADC A,B */
+	ALU(ADC, C),     /* ADC A,C */
+	ALU(ADC, D),     /* ADC A,D */
+	ALU(ADC, E),     /* ADC A,E */
+	ALU(ADC, H),     /* ADC A,H */
+	ALU(ADC, L),     /* ADC A,L */
+	ALU(ADC, HLind), /* ADC A,(HL) */
+	ALU(ADC, A),     /* ADC A,A */
 	/* 0x90 */
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
+	ALU(SUB, B),     /* SUB A,B */
+	ALU(SUB, C),     /* SUB A,C */
+	ALU(SUB, D),     /* SUB A,D */
+	ALU(SUB, E),     /* SUB A,E */
+	ALU(SUB, H),     /* SUB A,H */
+	ALU(SUB, L),     /* SUB A,L */
+	ALU(SUB, HLind), /* SUB A,(HL) */
+	ALU(SUB, A),     /* SUB A,A */
+	ALU(SBC, B),     /* SBC A,B */
+	ALU(SBC, C),     /* SBC A,C */
+	ALU(SBC, D),     /* SBC A,D */
+	ALU(SBC, E),     /* SBC A,E */
+	ALU(SBC, H),     /* SBC A,H */
+	ALU(SBC, L),     /* SBC A,L */
+	ALU(SBC, HLind), /* SBC A,(HL) */
+	ALU(SBC, A),     /* SBC A,A */
 	/* 0xa0 */
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
+	ALU(AND, B),     /* AND A,B */
+	ALU(AND, C),     /* AND A,C */
+	ALU(AND, D),     /* AND A,D */
+	ALU(AND, E),     /* AND A,E */
+	ALU(AND, H),     /* AND A,H */
+	ALU(AND, L),     /* AND A,L */
+	ALU(AND, HLind), /* AND A,(HL) */
+	ALU(AND, A),     /* AND A,A */
+	ALU(XOR, B),     /* XOR A,B */
+	ALU(XOR, C),     /* XOR A,C */
+	ALU(XOR, D),     /* XOR A,D */
+	ALU(XOR, E),     /* XOR A,E */
+	ALU(XOR, H),     /* XOR A,H */
+	ALU(XOR, L),     /* XOR A,L */
+	ALU(XOR, HLind), /* XOR A,(HL) */
+	ALU(XOR, A),     /* XOR A,A */
 	/* 0xb0 */
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
+	ALU(OR, B),     /* OR A,B */
+	ALU(OR, C),     /* OR A,C */
+	ALU(OR, D),     /* OR A,D */
+	ALU(OR, E),     /* OR A,E */
+	ALU(OR, H),     /* OR A,H */
+	ALU(OR, L),     /* OR A,L */
+	ALU(OR, HLind), /* OR A,(HL) */
+	ALU(OR, A),     /* OR A,A */
+	ALU(CP, B),     /* CP A,B */
+	ALU(CP, C),     /* CP A,C */
+	ALU(CP, D),     /* CP A,D */
+	ALU(CP, E),     /* CP A,E */
+	ALU(CP, H),     /* CP A,H */
+	ALU(CP, L),     /* CP A,L */
+	ALU(CP, HLind), /* CP A,(HL) */
+	ALU(CP, A),     /* CP A,A */
 	/* 0xc0 */
 	NOP,
 	NOP,
@@ -716,6 +878,7 @@ var ops [0x100]OpFunc = [0x100]OpFunc{
 	NOP,
 	NOP,
 	NOP,
+	ALU(ADD, Imm), /* ADD A,d8 */
 	NOP,
 	NOP,
 	NOP,
@@ -723,8 +886,7 @@ var ops [0x100]OpFunc = [0x100]OpFunc{
 	NOP,
 	NOP,
 	NOP,
-	NOP,
-	NOP,
+	ALU(ADC, Imm), /* ADC A,d8 */
 	NOP,
 	/* 0xd0 */
 	NOP,
@@ -733,6 +895,7 @@ var ops [0x100]OpFunc = [0x100]OpFunc{
 	NOP,
 	NOP,
 	NOP,
+	ALU(SUB, Imm), /* SUB A,d8 */
 	NOP,
 	NOP,
 	NOP,
@@ -740,8 +903,7 @@ var ops [0x100]OpFunc = [0x100]OpFunc{
 	NOP,
 	NOP,
 	NOP,
-	NOP,
-	NOP,
+	ALU(SBC, Imm), /* SBC A,d8 */
 	NOP,
 	/* 0xe0 */
 	NOP,
@@ -750,6 +912,7 @@ var ops [0x100]OpFunc = [0x100]OpFunc{
 	NOP,
 	NOP,
 	NOP,
+	ALU(AND, Imm), /* AND A,d8 */
 	NOP,
 	NOP,
 	NOP,
@@ -757,8 +920,7 @@ var ops [0x100]OpFunc = [0x100]OpFunc{
 	NOP,
 	NOP,
 	NOP,
-	NOP,
-	NOP,
+	ALU(XOR, Imm), /* XOR A,d8 */
 	NOP,
 	/* 0xf0 */
 	NOP,
@@ -767,6 +929,7 @@ var ops [0x100]OpFunc = [0x100]OpFunc{
 	NOP,
 	NOP,
 	NOP,
+	ALU(OR, Imm), /* OR A,d8 */
 	NOP,
 	NOP,
 	NOP,
@@ -774,8 +937,7 @@ var ops [0x100]OpFunc = [0x100]OpFunc{
 	NOP,
 	NOP,
 	NOP,
-	NOP,
-	NOP,
+	ALU(CP, Imm), /* CP A,d8 */
 	NOP,
 }
 
