@@ -425,6 +425,21 @@ func RRA(cpu *CPU, sys *Sys) int {
 	return 4
 }
 
+/* Decimal adjust A */
+func DAA(cpu *CPU, sys *Sys) int {
+	a := cpu.rrb(A)
+	tens := a / 10
+	a -= tens * 10
+	ones := a
+
+	/* I don't actually know how the CPU handles bad cases */
+	newA := tens<<4 | ones
+	cpu.wrb(A, newA)
+
+	cpu.ip++
+	return 4
+}
+
 var ops [0x100]OpFunc = [0x100]OpFunc{
 	/* 0x00 */
 	NOP,              /* NOP */
@@ -468,7 +483,7 @@ var ops [0x100]OpFunc = [0x100]OpFunc{
 	INCDECB(H, 1),    /* INC H */
 	INCDECB(H, -1),   /* DEC H */
 	LDBImm(H),        /* LD H,d8 */
-	NOP,
+	DAA,
 	JR(condZ),        /* JR Z,r8 */
 	ADDS(HL),         /* ADD HL,HL */
 	LDBInd(A, HL, 1), /* LD A,(HL+) */
