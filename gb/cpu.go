@@ -881,6 +881,20 @@ func EI(cpu *CPU, sys *Sys) int {
 	return 4
 }
 
+func LDHLSPimm(cpu *CPU, sys *Sys) int {
+	v := signExtend(sys.Rb(cpu.ip + 1))
+
+	cpu.fz = false
+	cpu.fn = false
+	cpu.fh = halfCarry(uint8(cpu.sp>>8), uint8(v>>8))
+	cpu.fc = carry(uint8(cpu.sp>>8), uint8(v>>8))
+
+	cpu.wrs(HL, cpu.sp+v)
+
+	cpu.ip += 2
+	return 12
+}
+
 var ops [0x100]OpFunc = [0x100]OpFunc{
 	/* 0x00 */
 	NOP,              /* NOP */
@@ -1146,7 +1160,7 @@ var ops [0x100]OpFunc = [0x100]OpFunc{
 	PUSH(AF),     /* PUSH AF */
 	ALU(OR, Imm), /* OR A,d8 */
 	RST(0x30),    /* RST 30H */
-	NOP,
+	LDHLSPimm,    /* LD HL,SP+r8 */
 	NOP,
 	LDSimmAddr(true), /* LD (a16),A */
 	EI,               /* EI */
