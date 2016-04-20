@@ -839,6 +839,20 @@ func LDHC(atoaddr bool) OpFunc {
 	}
 }
 
+func ADDSPimm(cpu *CPU, sys *Sys) int {
+	v := signExtend(sys.Rb(cpu.ip + 1))
+
+	cpu.fz = false
+	cpu.fn = false
+	cpu.fh = halfCarry(uint8(cpu.sp>>8), uint8(v>>8))
+	cpu.fc = carry(uint8(cpu.sp>>8), uint8(v>>8))
+
+	cpu.sp += v
+
+	cpu.ip += 2
+	return 16
+}
+
 var ops [0x100]OpFunc = [0x100]OpFunc{
 	/* 0x00 */
 	NOP,              /* NOP */
@@ -1087,7 +1101,7 @@ var ops [0x100]OpFunc = [0x100]OpFunc{
 	PUSH(HL),      /* PUSH HL */
 	ALU(AND, Imm), /* AND A,d8 */
 	RST(0x20),     /* RST 20H */
-	NOP,
+	ADDSPimm,
 	JPHLind, /* JP (HL) */
 	NOP,
 	DRAGONS,       /* XXX */
