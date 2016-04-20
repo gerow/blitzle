@@ -811,6 +811,34 @@ func DRAGONS(cpu *CPU, sys *Sys) int {
 	return 4
 }
 
+func LDH(atoaddr bool) OpFunc {
+	return func(cpu *CPU, sys *Sys) int {
+		addr := uint16(0xff00) | uint16(sys.Rb(cpu.ip+1))
+		if atoaddr {
+			sys.Wb(addr, cpu.a)
+		} else {
+			cpu.a = sys.Rb(addr)
+		}
+
+		cpu.ip += 2
+		return 12
+	}
+}
+
+func LDHC(atoaddr bool) OpFunc {
+	return func(cpu *CPU, sys *Sys) int {
+		addr := uint16(0xff00) | uint16(cpu.c)
+		if atoaddr {
+			sys.Wb(addr, cpu.a)
+		} else {
+			cpu.a = sys.Rb(addr)
+		}
+
+		cpu.ip++
+		return 8
+	}
+}
+
 var ops [0x100]OpFunc = [0x100]OpFunc{
 	/* 0x00 */
 	NOP,              /* NOP */
@@ -1051,9 +1079,9 @@ var ops [0x100]OpFunc = [0x100]OpFunc{
 	ALU(SBC, Imm),       /* SBC A,d8 */
 	RST(0x18),           /* RST 18H */
 	/* 0xe0 */
-	NOP,
-	POP(HL), /* POP HL */
-	NOP,
+	LDH(true),     /* LDH (a8),A */
+	POP(HL),       /* POP HL */
+	LDHC(true),    /* LD (C),A */
 	DRAGONS,       /* XXX */
 	DRAGONS,       /* XXX */
 	PUSH(HL),      /* PUSH HL */
@@ -1068,9 +1096,9 @@ var ops [0x100]OpFunc = [0x100]OpFunc{
 	ALU(XOR, Imm), /* XOR A,d8 */
 	RST(0x28),     /* RST 28H */
 	/* 0xf0 */
-	NOP,
-	POPAF, /* POP AF */
-	NOP,
+	LDH(false),  /* LDH A,(a8) */
+	POPAF,       /* POP AF */
+	LDHC(false), /* LD A,(C) */
 	NOP,
 	DRAGONS,      /* XXX */
 	PUSH(AF),     /* PUSH AF */
