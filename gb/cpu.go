@@ -853,6 +853,20 @@ func ADDSPimm(cpu *CPU, sys *Sys) int {
 	return 16
 }
 
+func LDSimmAddr(atoaddr bool) OpFunc {
+	return func(cpu *CPU, sys *Sys) int {
+		addr := sys.Rs(cpu.ip + 1)
+		if atoaddr {
+			sys.Wb(addr, cpu.a)
+		} else {
+			cpu.a = sys.Rb(addr)
+		}
+
+		cpu.ip += 3
+		return 16
+	}
+}
+
 var ops [0x100]OpFunc = [0x100]OpFunc{
 	/* 0x00 */
 	NOP,              /* NOP */
@@ -1093,22 +1107,22 @@ var ops [0x100]OpFunc = [0x100]OpFunc{
 	ALU(SBC, Imm),       /* SBC A,d8 */
 	RST(0x18),           /* RST 18H */
 	/* 0xe0 */
-	LDH(true),     /* LDH (a8),A */
-	POP(HL),       /* POP HL */
-	LDHC(true),    /* LD (C),A */
-	DRAGONS,       /* XXX */
-	DRAGONS,       /* XXX */
-	PUSH(HL),      /* PUSH HL */
-	ALU(AND, Imm), /* AND A,d8 */
-	RST(0x20),     /* RST 20H */
-	ADDSPimm,
-	JPHLind, /* JP (HL) */
-	NOP,
-	DRAGONS,       /* XXX */
-	DRAGONS,       /* XXX */
-	DRAGONS,       /* XXX */
-	ALU(XOR, Imm), /* XOR A,d8 */
-	RST(0x28),     /* RST 28H */
+	LDH(true),        /* LDH (a8),A */
+	POP(HL),          /* POP HL */
+	LDHC(true),       /* LD (C),A */
+	DRAGONS,          /* XXX */
+	DRAGONS,          /* XXX */
+	PUSH(HL),         /* PUSH HL */
+	ALU(AND, Imm),    /* AND A,d8 */
+	RST(0x20),        /* RST 20H */
+	ADDSPimm,         /* ADD SP,r8 */
+	JPHLind,          /* JP (HL) */
+	LDSimmAddr(true), /* LD (a16),A */
+	DRAGONS,          /* XXX */
+	DRAGONS,          /* XXX */
+	DRAGONS,          /* XXX */
+	ALU(XOR, Imm),    /* XOR A,d8 */
+	RST(0x28),        /* RST 28H */
 	/* 0xf0 */
 	LDH(false),  /* LDH A,(a8) */
 	POPAF,       /* POP AF */
@@ -1120,7 +1134,7 @@ var ops [0x100]OpFunc = [0x100]OpFunc{
 	RST(0x30),    /* RST 30H */
 	NOP,
 	NOP,
-	NOP,
+	LDSimmAddr(true), /* LD (a16),A */
 	NOP,
 	DRAGONS,      /* XXX */
 	DRAGONS,      /* XXX */
