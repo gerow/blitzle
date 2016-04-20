@@ -895,6 +895,13 @@ func LDHLSPimm(cpu *CPU, sys *Sys) int {
 	return 12
 }
 
+func LDSPHL(cpu *CPU, sys *Sys) int {
+	cpu.sp = cpu.rrs(HL)
+
+	cpu.ip++
+	return 8
+}
+
 var ops [0x100]OpFunc = [0x100]OpFunc{
 	/* 0x00 */
 	NOP,              /* NOP */
