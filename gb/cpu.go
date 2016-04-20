@@ -867,6 +867,20 @@ func LDSimmAddr(atoaddr bool) OpFunc {
 	}
 }
 
+func DI(cpu *CPU, sys *Sys) int {
+	cpu.interrupts = false
+
+	cpu.ip++
+	return 4
+}
+
+func EI(cpu *CPU, sys *Sys) int {
+	cpu.interrupts = true
+
+	cpu.ip++
+	return 4
+}
+
 var ops [0x100]OpFunc = [0x100]OpFunc{
 	/* 0x00 */
 	NOP,              /* NOP */
@@ -1124,10 +1138,10 @@ var ops [0x100]OpFunc = [0x100]OpFunc{
 	ALU(XOR, Imm),    /* XOR A,d8 */
 	RST(0x28),        /* RST 28H */
 	/* 0xf0 */
-	LDH(false),  /* LDH A,(a8) */
-	POPAF,       /* POP AF */
-	LDHC(false), /* LD A,(C) */
-	NOP,
+	LDH(false),   /* LDH A,(a8) */
+	POPAF,        /* POP AF */
+	LDHC(false),  /* LD A,(C) */
+	DI,           /* DI */
 	DRAGONS,      /* XXX */
 	PUSH(AF),     /* PUSH AF */
 	ALU(OR, Imm), /* OR A,d8 */
@@ -1135,11 +1149,11 @@ var ops [0x100]OpFunc = [0x100]OpFunc{
 	NOP,
 	NOP,
 	LDSimmAddr(true), /* LD (a16),A */
-	NOP,
-	DRAGONS,      /* XXX */
-	DRAGONS,      /* XXX */
-	ALU(CP, Imm), /* CP A,d8 */
-	RST(0x38),    /* RST 38H */
+	EI,               /* EI */
+	DRAGONS,          /* XXX */
+	DRAGONS,          /* XXX */
+	ALU(CP, Imm),     /* CP A,d8 */
+	RST(0x38),        /* RST 38H */
 }
 
 var cbops [0x100]OpFunc = [0x100]OpFunc{
