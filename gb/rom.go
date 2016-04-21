@@ -51,7 +51,11 @@ func (r *ROM) HeaderChecksum() byte {
 
 func (r *ROM) GlobalChecksum() uint16 {
 	x := 0
-	for _, b := range append(r.data[:0x014e], r.data[0x0150:]...) {
+	for _, b := range r.data[:0x014e] {
+		x += int(b)
+	}
+
+	for _, b := range r.data[0x0150:] {
 		x += int(b)
 	}
 
@@ -98,7 +102,6 @@ func (r *ROM) Info() string {
 }
 
 func (r *ROM) Rb(addr uint16) uint8 {
-	log.Printf("Read attempt of %04Xh in ROM\n", addr)
 	return r.data[addr]
 }
 
@@ -116,4 +119,10 @@ func (r *ROM) Ws(addr uint16, val uint16) {
 
 func (r *ROM) Asserts(addr uint16) bool {
 	return addr&^romMask == 0x0000
+}
+
+func (r *ROM) Dump() {
+	for addr, b := range r.data {
+		fmt.Printf("%04Xh: %02Xh\n", uint16(addr), b)
+	}
 }

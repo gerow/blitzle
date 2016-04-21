@@ -58,7 +58,11 @@ func NewSys(rom ROM) *Sys {
 	cpu := NewCPU()
 	bh1 := NewBusHole(0xa000, 13)
 	devs := []BusDev{&rom, systemRAM, hiRAM, video, bh1}
-	return &Sys{rom, *systemRAM, *hiRAM, *video, *cpu, devs, false}
+
+	s := &Sys{rom, *systemRAM, *hiRAM, *video, *cpu, devs, false}
+	s.SetPostBootloaderState()
+
+	return s
 }
 
 func (s *Sys) IER() uint8 {
@@ -81,20 +85,59 @@ func (s *Sys) getHandler(addr uint16) BusDev {
 	return nil
 }
 
-func (s *Sys) Rb(addr uint16) uint8 {
+func (s *Sys) RbLog(addr uint16, l bool) uint8 {
 	rv := s.getHandler(addr).Rb(addr)
-	log.Printf("Read attempt of %04Xh returned %02Xh\n", addr, rv)
+	if l {
+		log.Printf("R1 (%04Xh) => %02Xh\n", addr, rv)
+	}
 	return rv
 }
 
-func (s *Sys) Wb(addr uint16, val uint8) {
+func (s *Sys) WbLog(addr uint16, val uint8, l bool) {
+	if l {
+		log.Printf("W1 %02Xh => (%04Xh)\n", val, addr)
+	}
 	s.getHandler(addr).Wb(addr, val)
 }
 
+func (s *Sys) RsLog(addr uint16, l bool) uint16 {
+	rv := s.getHandler(addr).Rs(addr)
+	if l {
+		log.Printf("R2 (%04Xh) => %04Xh\n", addr, rv)
+	}
+	return rv
+}
+
+func (s *Sys) WsLog(addr uint16, val uint16, l bool) {
+	if l {
+		log.Printf("W2 %04Xh => (%04Xh)\n", val, addr)
+	}
+	s.getHandler(addr).Ws(addr, val)
+}
+
+func (s *Sys) Rb(addr uint16) uint8 {
+	return s.RbLog(addr, true)
+}
+
+func (s *Sys) Wb(addr uint16, val uint8) {
+	s.WbLog(addr, val, true)
+}
+
 func (s *Sys) Rs(addr uint16) uint16 {
-	return s.getHandler(addr).Rs(addr)
+	return s.RsLog(addr, true)
 }
 
 func (s *Sys) Ws(addr uint16, val uint16) {
-	s.getHandler(addr).Ws(addr, val)
+	s.WsLog(addr, val, true)
+}
+
+func (s *Sys) SetPostBootloaderState() {
+	s.cpu.SetPostBootloaderState(s)
+}
+
+func (s *Sys) WriteBytes(bytes []byte, addr uint16) {
+	for _, b := range bytes {
+		s.Wb(addr, b)
+		addr++
+	}
 }

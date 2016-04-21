@@ -129,10 +129,36 @@ func signExtend(a uint8) uint16 {
 
 func NewCPU() *CPU {
 	cpu := &CPU{}
-	cpu.ip = 0x100
 	cpu.interrupts = true
-	cpu.sp = 0xfffe
+
 	return cpu
+}
+
+func (c *CPU) SetPostBootloaderState(sys *Sys) {
+	c.ip = 0x100
+
+	c.a = 0x01
+	c.fz = true
+	c.fh = true
+	c.fn = false
+	c.fc = true
+
+	c.b = 0x00
+	c.c = 0x13
+
+	c.d = 0x00
+	c.e = 0xd8
+
+	c.h = 0x01
+	c.l = 0x4d
+
+	c.sp = 0xfffe
+
+	initStack := []byte{
+		0x00, 0x00, 0x00, 0x80, 0xbf, 0xf3, 0xbf, 0x3f, 0x00, 0xbf, 0x7f,
+		0xff, 0x9f, 0xbf, 0xff, 0x00, 0x00, 0xbf, 0x77, 0xf3, 0xf1, 0x91,
+		0x00, 0x00, 0x00, 0xfc, 0xff, 0xff, 0x00, 0x00, 0x00}
+	sys.WriteBytes(initStack, 0xff05)
 }
 
 type CPUCond int
@@ -190,7 +216,7 @@ func (c *CPU) State(sys *Sys) string {
 		if addr != c.ip {
 			ipChar = " "
 		}
-		o.WriteString(fmt.Sprintf("%s%04Xh: %02Xh\n", ipChar, addr, sys.Rb(addr)))
+		o.WriteString(fmt.Sprintf("%s%04Xh: %02Xh\n", ipChar, addr, sys.RbLog(addr, false)))
 	}
 
 	return o.String()
@@ -805,7 +831,8 @@ func PANIC(cpu *CPU, sys *Sys) int {
 }
 
 func DRAGONS(cpu *CPU, sys *Sys) int {
-	log.Printf("This op shouldn't exist!")
+	log.Println("This op shouldn't exist! That means that either someone is relying on unspecified operations or the emulation is in a really bad state!")
+	log.Println(cpu.State(sys))
 
 	cpu.ip++
 	return 4
