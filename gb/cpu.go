@@ -392,16 +392,23 @@ func INCDECS(sr ShortRegister, mod int) OpFunc {
 func INCDECB(br ByteRegister, mod int) OpFunc {
 	return func(cpu *CPU, sys *Sys) int {
 		var v uint8
+		var newVal uint8
 		if br == HLind {
 			v = sys.Rb(cpu.rrs(HL))
-			sys.Wb(cpu.rrs(HL), uint8(int(v)+mod))
+			newVal = uint8(int(v) + mod)
+			sys.Wb(cpu.rrs(HL), newVal)
 		} else {
 			v = cpu.rrb(br)
-			cpu.wrb(br, uint8(int(v)+mod))
+			newVal = uint8(int(v) + mod)
+			cpu.wrb(br, newVal)
 		}
-		cpu.fz = v == 0
+		cpu.fz = newVal == 0
 		cpu.fn = mod == -1
-		cpu.fh = halfCarry(v, uint8(mod))
+		if mod == 1 {
+			cpu.fh = halfCarry(v, 1)
+		} else {
+			cpu.fh = halfBorrow(v, 1)
+		}
 
 		cpu.ip++
 		if br == HLind {
