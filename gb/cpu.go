@@ -207,6 +207,8 @@ func (c *CPU) State(sys *Sys) string {
 	o.WriteString(fmt.Sprintf("  H:  %02Xh\n", c.h))
 	o.WriteString(fmt.Sprintf("  L:  %02Xh\n", c.l))
 	o.WriteString(fmt.Sprintf("  A:  %02Xh\n", c.a))
+	o.WriteString("  F:  ZNHC0000\n")
+	o.WriteString(fmt.Sprintf("      %08b\n", c.flags()))
 	o.WriteString(fmt.Sprintf("  IP: %04Xh\n", c.ip))
 	o.WriteString(fmt.Sprintf("  SP: %04Xh\n", c.sp))
 	o.WriteString(fmt.Sprintf("Area around IP\n"))
@@ -422,11 +424,12 @@ func JR(con CPUCond) OpFunc {
 	return func(cpu *CPU, sys *Sys) int {
 		j := signExtend(sys.Rb(cpu.ip + 1))
 		duration := 0
+		/* The relative amount is relative to where we would have been after this op */
+		cpu.ip += 2
 		if cpu.cond(con) {
 			cpu.ip += j
 			duration = 12
 		} else {
-			cpu.ip += 2
 			duration = 8
 		}
 		/*
