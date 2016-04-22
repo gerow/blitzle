@@ -459,7 +459,9 @@ func LDBImm(br ByteRegister) OpFunc {
 func RLCA(cpu *CPU, sys *Sys) int {
 	a := cpu.rrb(A)
 	carry := a>>7 != 0
+	oldA := a
 	a <<= 1
+	a |= oldA >> 7
 	cpu.wrb(A, a)
 
 	cpu.fz = a == 0
@@ -534,7 +536,9 @@ func LDBInd(destReg ByteRegister, srcAddrReg ShortRegister, mod int) OpFunc {
 func RRCA(cpu *CPU, sys *Sys) int {
 	a := cpu.rrb(A)
 	carry := a&1 != 0
+	oldA := a
 	a >>= 1
+	a |= oldA << 7
 	cpu.wrb(A, a)
 
 	cpu.fz = a == 0
@@ -936,6 +940,88 @@ func LDSPHL(cpu *CPU, sys *Sys) int {
 	return 8
 }
 
+type CBROp int
+
+const (
+	RLC = iota
+	RRC
+	RL
+	RR
+	SLA
+	SRA
+	SRL
+)
+
+/* CB Rotates */
+func CBR(op CBROp, br ByteRegister) OpFunc {
+	return func(cpu *CPU, sys *Sys) int {
+		var v uint8
+		if br == HLind {
+			v = sys.Rb(cpu.rrs(HL))
+		} else {
+			v = cpu.rrb(br)
+		}
+		oldV := v
+		ifc := cpu.fc
+		switch op {
+		case RLC:
+			/* Left rotate through carry */
+			cpu.fc = 0x80&v != 0
+			v <<= 1
+			v |= oldV >> 7
+		case RRC:
+			/* Right rotate through carry */
+			cpu.fc = 0x01&v != 0
+			v >>= 1
+			v |= oldV << 7
+		case RL:
+			/* Left rotate */
+			cpu.fc = 0x80&v != 0
+			v <<= 1
+			if ifc {
+				v |= 0x01
+			}
+		case RR:
+			/* Right rotate */
+			cpu.fc = 0x01&v != 0
+			v >>= 1
+			if ifc {
+				v |= 0x80
+			}
+		case SLA:
+			/* Left shift */
+			cpu.fc = 0x80&v != 0
+			v <<= 1
+		case SRA:
+			/* Signed right shift */
+			cpu.fc = 0x01&v != 0
+			v >>= 1
+			v |= oldV & 0x80
+		case SRL:
+			/* Unsigned right shift */
+			cpu.fc = 0x01&v != 0
+			v >>= 1
+		default:
+			panic("invalid op!")
+		}
+		if br == HLind {
+			sys.Wb(cpu.rrs(HL), v)
+		} else {
+			cpu.wrb(br, v)
+		}
+
+		cpu.fz = v == 0
+		cpu.fn = false
+		cpu.fh = false
+
+		cpu.ip += 2
+		if br == HLind {
+			return 16
+		}
+		return 8
+	}
+}
+
 var ops [0x100]OpFunc = [0x100]OpFunc{
 	/* 0x00 */
 	NOP,              /* NOP */
@@ -1213,56 +1299,56 @@ var ops [0x100]OpFunc = [0x100]OpFunc{
 
 var cbops [0x100]OpFunc = [0x100]OpFunc{
 	/* 0x00 */
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
+	CBR(RLC, B),     /* RLC B */
+	CBR(RLC, C),     /* RLC C */
+	CBR(RLC, D),     /* RLC D */
+	CBR(RLC, E),     /* RLC E */
+	CBR(RLC, H),     /* RLC H */
+	CBR(RLC, L),     /* RLC L */
+	CBR(RLC, HLind), /* RLC (HL) */
+	CBR(RLC, A),     /* RLC A */
+	CBR(RRC, B),     /* RRC B */
+	CBR(RRC, C),     /* RRC C */
+	CBR(RRC, D),     /* RRC D */
+	CBR(RRC, E),     /* RRC E */
+	CBR(RRC, H),     /* RRC H */
+	CBR(RRC, L),     /* RRC L */
+	CBR(RRC, HLind), /* RRC (HL) */
+	CBR(RRC, A),     /* RRC A */
 	/* 0x10 */
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
+	CBR(RL, B),     /* RL B */
+	CBR(RL, C),     /* RL C */
+	CBR(RL, D),     /* RL D */
+	CBR(RL, E),     /* RL E */
+	CBR(RL, H),     /* RL H */
+	CBR(RL, L),     /* RL L */
+	CBR(RL, HLind), /* RL (HL) */
+	CBR(RL, A),     /* RL A */
+	CBR(RR, B),     /* RR B */
+	CBR(RR, C),     /* RR C */
+	CBR(RR, D),     /* RR D */
+	CBR(RR, E),     /* RR E */
+	CBR(RR, H),     /* RR H */
+	CBR(RR, L),     /* RR L */
+	CBR(RR, HLind), /* RR (HL) */
+	CBR(RR, A),     /* RR A */
 	/* 0x20 */
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
+	CBR(SLA, B),     /* SLA B */
+	CBR(SLA, C),     /* SLA C */
+	CBR(SLA, D),     /* SLA D */
+	CBR(SLA, E),     /* SLA E */
+	CBR(SLA, H),     /* SLA H */
+	CBR(SLA, L),     /* SLA L */
+	CBR(SLA, HLind), /* SLA (HL) */
+	CBR(SLA, A),     /* SLA A */
+	CBR(SRA, B),     /* SRA B */
+	CBR(SRA, C),     /* SRA C */
+	CBR(SRA, D),     /* SRA D */
+	CBR(SRA, E),     /* SRA E */
+	CBR(SRA, H),     /* SRA H */
+	CBR(SRA, L),     /* SRA L */
+	CBR(SRA, HLind), /* SRA (HL) */
+	CBR(SRA, A),     /* SRA A */
 	/* 0x30 */
 	NOP,
 	NOP,
@@ -1272,14 +1358,14 @@ var cbops [0x100]OpFunc = [0x100]OpFunc{
 	NOP,
 	NOP,
 	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
+	CBR(SRL, B),     /* SRL B */
+	CBR(SRL, C),     /* SRL C */
+	CBR(SRL, D),     /* SRL D */
+	CBR(SRL, E),     /* SRL E */
+	CBR(SRL, H),     /* SRL H */
+	CBR(SRL, L),     /* SRL L */
+	CBR(SRL, HLind), /* SRL (HL) */
+	CBR(SRL, A),     /* SRL A */
 	/* 0x40 */
 	NOP,
 	NOP,
