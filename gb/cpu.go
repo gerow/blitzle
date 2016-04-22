@@ -1022,6 +1022,56 @@ func CBR(op CBROp, br ByteRegister) OpFunc {
 	}
 }
 
+func SWAP(br ByteRegister) OpFunc {
+	return func(cpu *CPU, sys *Sys) int {
+		var v uint8
+		if br == HLind {
+			v = sys.Rb(cpu.rrs(HL))
+		} else {
+			v = cpu.rrb(br)
+		}
+
+		v = v>>4 | v<<4
+		if br == HLind {
+			sys.Wb(cpu.rrs(HL), v)
+		} else {
+			cpu.wrb(br, v)
+		}
+
+		cpu.fz = v == 0
+		cpu.fn = false
+		cpu.fh = false
+		cpu.fc = false
+
+		cpu.ip += 2
+		if br == HLind {
+			return 16
+		}
+		return 8
+	}
+}
+
+func BIT(n uint, br ByteRegister) OpFunc {
+	return func(cpu *CPU, sys *Sys) int {
+		var v uint8
+		if br == HLind {
+			v = sys.Rb(cpu.rrs(HL))
+		} else {
+			v = cpu.rrb(br)
+		}
+
+		cpu.fz = (0x01<<n)&v == 0
+		cpu.fn = false
+		cpu.fh = true
+
+		cpu.ip += 2
+		if br == HLind {
+			return 16
+		}
+		return 8
+	}
+}
+
 var ops [0x100]OpFunc = [0x100]OpFunc{
 	/* 0x00 */
 	NOP,              /* NOP */
@@ -1350,14 +1400,14 @@ var cbops [0x100]OpFunc = [0x100]OpFunc{
 	CBR(SRA, HLind), /* SRA (HL) */
 	CBR(SRA, A),     /* SRA A */
 	/* 0x30 */
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
+	SWAP(B),         /* SWAP B */
+	SWAP(C),         /* SWAP C */
+	SWAP(D),         /* SWAP D */
+	SWAP(E),         /* SWAP E */
+	SWAP(H),         /* SWAP H */
+	SWAP(L),         /* SWAP L */
+	SWAP(HLind),     /* SWAP (HL) */
+	SWAP(A),         /* SWAP A */
 	CBR(SRL, B),     /* SRL B */
 	CBR(SRL, C),     /* SRL C */
 	CBR(SRL, D),     /* SRL D */
@@ -1367,73 +1417,73 @@ var cbops [0x100]OpFunc = [0x100]OpFunc{
 	CBR(SRL, HLind), /* SRL (HL) */
 	CBR(SRL, A),     /* SRL A */
 	/* 0x40 */
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
+	BIT(0, B),     /* BIT 0,B */
+	BIT(0, C),     /* BIT 0,C */
+	BIT(0, D),     /* BIT 0,D */
+	BIT(0, E),     /* BIT 0,E */
+	BIT(0, H),     /* BIT 0,H */
+	BIT(0, L),     /* BIT 0,L */
+	BIT(0, HLind), /* BIT 0,(HL) */
+	BIT(0, A),     /* BIT 0,A */
+	BIT(1, B),     /* BIT 1,B */
+	BIT(1, C),     /* BIT 1,C */
+	BIT(1, D),     /* BIT 1,D */
+	BIT(1, E),     /* BIT 1,E */
+	BIT(1, H),     /* BIT 1,H */
+	BIT(1, L),     /* BIT 1,L */
+	BIT(1, HLind), /* BIT 1,(HL) */
+	BIT(1, A),     /* BIT 1,A */
 	/* 0x50 */
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
+	BIT(2, B),     /* BIT 2,B */
+	BIT(2, C),     /* BIT 2,C */
+	BIT(2, D),     /* BIT 2,D */
+	BIT(2, E),     /* BIT 2,E */
+	BIT(2, H),     /* BIT 2,H */
+	BIT(2, L),     /* BIT 2,L */
+	BIT(2, HLind), /* BIT 2,(HL) */
+	BIT(2, A),     /* BIT 2,A */
+	BIT(3, B),     /* BIT 3,B */
+	BIT(3, C),     /* BIT 3,C */
+	BIT(3, D),     /* BIT 3,D */
+	BIT(3, E),     /* BIT 3,E */
+	BIT(3, H),     /* BIT 3,H */
+	BIT(3, L),     /* BIT 3,L */
+	BIT(3, HLind), /* BIT 3,(HL) */
+	BIT(3, A),     /* BIT 3,A */
 	/* 0x60 */
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
+	BIT(4, B),     /* BIT 4,B */
+	BIT(4, C),     /* BIT 4,C */
+	BIT(4, D),     /* BIT 4,D */
+	BIT(4, E),     /* BIT 4,E */
+	BIT(4, H),     /* BIT 4,H */
+	BIT(4, L),     /* BIT 4,L */
+	BIT(4, HLind), /* BIT 4,(HL) */
+	BIT(4, A),     /* BIT 4,A */
+	BIT(5, B),     /* BIT 5,B */
+	BIT(5, C),     /* BIT 5,C */
+	BIT(5, D),     /* BIT 5,D */
+	BIT(5, E),     /* BIT 5,E */
+	BIT(5, H),     /* BIT 5,H */
+	BIT(5, L),     /* BIT 5,L */
+	BIT(5, HLind), /* BIT 5,(HL) */
+	BIT(5, A),     /* BIT 5,A */
 	/* 0x70 */
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
+	BIT(6, B),     /* BIT 6,B */
+	BIT(6, C),     /* BIT 6,C */
+	BIT(6, D),     /* BIT 6,D */
+	BIT(6, E),     /* BIT 6,E */
+	BIT(6, H),     /* BIT 6,H */
+	BIT(6, L),     /* BIT 6,L */
+	BIT(6, HLind), /* BIT 6,(HL) */
+	BIT(6, A),     /* BIT 6,A */
+	BIT(7, B),     /* BIT 7,B */
+	BIT(7, C),     /* BIT 7,C */
+	BIT(7, D),     /* BIT 7,D */
+	BIT(7, E),     /* BIT 7,E */
+	BIT(7, H),     /* BIT 7,H */
+	BIT(7, L),     /* BIT 7,L */
+	BIT(7, HLind), /* BIT 7,(HL) */
+	BIT(7, A),     /* BIT 7,A */
 	/* 0x80 */
 	NOP,
 	NOP,
