@@ -1072,6 +1072,35 @@ func BIT(n uint, br ByteRegister) OpFunc {
 	}
 }
 
+func SETRES(set bool, n uint, br ByteRegister) OpFunc {
+	return func(cpu *CPU, sys *Sys) int {
+		var v uint8
+		if br == HLind {
+			v = sys.Rb(cpu.rrs(HL))
+		} else {
+			v = cpu.rrb(br)
+		}
+
+		if set {
+			v |= 0x01 << n
+		} else {
+			v &= ^(0x01 << n)
+		}
+
+		if br == HLind {
+			sys.Wb(cpu.rrs(HL), v)
+		} else {
+			cpu.wrb(br, v)
+		}
+
+		cpu.ip += 2
+		if br == HLind {
+			return 16
+		}
+		return 8
+	}
+}
+
 var ops [0x100]OpFunc = [0x100]OpFunc{
 	/* 0x00 */
 	NOP,              /* NOP */
@@ -1485,139 +1514,139 @@ var cbops [0x100]OpFunc = [0x100]OpFunc{
 	BIT(7, HLind), /* BIT 7,(HL) */
 	BIT(7, A),     /* BIT 7,A */
 	/* 0x80 */
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
+	SETRES(false, 0, B),     /* RES 0,B */
+	SETRES(false, 0, C),     /* RES 0,C */
+	SETRES(false, 0, D),     /* RES 0,D */
+	SETRES(false, 0, E),     /* RES 0,E */
+	SETRES(false, 0, H),     /* RES 0,H */
+	SETRES(false, 0, L),     /* RES 0,L */
+	SETRES(false, 0, HLind), /* RES 0,(HL) */
+	SETRES(false, 0, A),     /* RES 0,A */
+	SETRES(false, 1, B),     /* RES 1,B */
+	SETRES(false, 1, C),     /* RES 1,C */
+	SETRES(false, 1, D),     /* RES 1,D */
+	SETRES(false, 1, E),     /* RES 7,E */
+	SETRES(false, 1, H),     /* RES 1,H */
+	SETRES(false, 1, L),     /* RES 1,L */
+	SETRES(false, 1, HLind), /* RES 1,(HL) */
+	SETRES(false, 1, A),     /* RES 1,A */
 	/* 0x90 */
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
+	SETRES(false, 2, B),     /* RES 2,B */
+	SETRES(false, 2, C),     /* RES 2,C */
+	SETRES(false, 2, D),     /* RES 2,D */
+	SETRES(false, 2, E),     /* RES 2,E */
+	SETRES(false, 2, H),     /* RES 2,H */
+	SETRES(false, 2, L),     /* RES 2,L */
+	SETRES(false, 2, HLind), /* RES 2,(HL) */
+	SETRES(false, 2, A),     /* RES 2,A */
+	SETRES(false, 3, B),     /* RES 3,B */
+	SETRES(false, 3, C),     /* RES 3,C */
+	SETRES(false, 3, D),     /* RES 3,D */
+	SETRES(false, 3, E),     /* RES 3,E */
+	SETRES(false, 3, H),     /* RES 3,H */
+	SETRES(false, 3, L),     /* RES 3,L */
+	SETRES(false, 3, HLind), /* RES 3,(HL) */
+	SETRES(false, 3, A),     /* RES 3,A */
 	/* 0xa0 */
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
+	SETRES(false, 4, B),     /* RES 4,B */
+	SETRES(false, 4, C),     /* RES 4,C */
+	SETRES(false, 4, D),     /* RES 4,D */
+	SETRES(false, 4, E),     /* RES 4,E */
+	SETRES(false, 4, H),     /* RES 4,H */
+	SETRES(false, 4, L),     /* RES 4,L */
+	SETRES(false, 4, HLind), /* RES 4,(HL) */
+	SETRES(false, 4, A),     /* RES 4,A */
+	SETRES(false, 5, B),     /* RES 5,B */
+	SETRES(false, 5, C),     /* RES 5,C */
+	SETRES(false, 5, D),     /* RES 5,D */
+	SETRES(false, 5, E),     /* RES 5,E */
+	SETRES(false, 5, H),     /* RES 5,H */
+	SETRES(false, 5, L),     /* RES 5,L */
+	SETRES(false, 5, HLind), /* RES 5,(HL) */
+	SETRES(false, 5, A),     /* RES 5,A */
 	/* 0xb0 */
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
+	SETRES(false, 6, B),     /* RES 6,B */
+	SETRES(false, 6, C),     /* RES 6,C */
+	SETRES(false, 6, D),     /* RES 6,D */
+	SETRES(false, 6, E),     /* RES 6,E */
+	SETRES(false, 6, H),     /* RES 6,H */
+	SETRES(false, 6, L),     /* RES 6,L */
+	SETRES(false, 6, HLind), /* RES 6,(HL) */
+	SETRES(false, 6, A),     /* RES 6,A */
+	SETRES(false, 7, B),     /* RES 7,B */
+	SETRES(false, 7, C),     /* RES 7,C */
+	SETRES(false, 7, D),     /* RES 7,D */
+	SETRES(false, 7, E),     /* RES 7,E */
+	SETRES(false, 7, H),     /* RES 7,H */
+	SETRES(false, 7, L),     /* RES 7,L */
+	SETRES(false, 7, HLind), /* RES 7,(HL) */
+	SETRES(false, 7, A),     /* RES 7,A */
 	/* 0xc0 */
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
+	SETRES(true, 0, B),     /* SET 0,B */
+	SETRES(true, 0, C),     /* SET 0,C */
+	SETRES(true, 0, D),     /* SET 0,D */
+	SETRES(true, 0, E),     /* SET 0,E */
+	SETRES(true, 0, H),     /* SET 0,H */
+	SETRES(true, 0, L),     /* SET 0,L */
+	SETRES(true, 0, HLind), /* SET 0,(HL) */
+	SETRES(true, 0, A),     /* SET 0,A */
+	SETRES(true, 1, B),     /* SET 1,B */
+	SETRES(true, 1, C),     /* SET 1,C */
+	SETRES(true, 1, D),     /* SET 1,D */
+	SETRES(true, 1, E),     /* SET 1,E */
+	SETRES(true, 1, H),     /* SET 1,H */
+	SETRES(true, 1, L),     /* SET 1,L */
+	SETRES(true, 1, HLind), /* SET 1,(HL) */
+	SETRES(true, 1, A),     /* SET 1,A */
 	/* 0xd0 */
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
+	SETRES(true, 2, B),     /* SET 2,B */
+	SETRES(true, 2, C),     /* SET 2,C */
+	SETRES(true, 2, D),     /* SET 2,D */
+	SETRES(true, 2, E),     /* SET 2,E */
+	SETRES(true, 2, H),     /* SET 2,H */
+	SETRES(true, 2, L),     /* SET 2,L */
+	SETRES(true, 2, HLind), /* SET 2,(HL) */
+	SETRES(true, 2, A),     /* SET 2,A */
+	SETRES(true, 3, B),     /* SET 3,B */
+	SETRES(true, 3, C),     /* SET 3,C */
+	SETRES(true, 3, D),     /* SET 3,D */
+	SETRES(true, 3, E),     /* SET 3,E */
+	SETRES(true, 3, H),     /* SET 3,H */
+	SETRES(true, 3, L),     /* SET 3,L */
+	SETRES(true, 3, HLind), /* SET 3,(HL) */
+	SETRES(true, 3, A),     /* SET 3,A */
 	/* 0xe0 */
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
+	SETRES(true, 4, B),     /* SET 4,B */
+	SETRES(true, 4, C),     /* SET 4,C */
+	SETRES(true, 4, D),     /* SET 4,D */
+	SETRES(true, 4, E),     /* SET 4,E */
+	SETRES(true, 4, H),     /* SET 4,H */
+	SETRES(true, 4, L),     /* SET 4,L */
+	SETRES(true, 4, HLind), /* SET 4,(HL) */
+	SETRES(true, 4, A),     /* SET 4,A */
+	SETRES(true, 5, B),     /* SET 5,B */
+	SETRES(true, 5, C),     /* SET 5,C */
+	SETRES(true, 5, D),     /* SET 5,D */
+	SETRES(true, 5, E),     /* SET 5,E */
+	SETRES(true, 5, H),     /* SET 5,H */
+	SETRES(true, 5, L),     /* SET 5,L */
+	SETRES(true, 5, HLind), /* SET 5,(HL) */
+	SETRES(true, 5, A),     /* SET 5,A */
 	/* 0xf0 */
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
-	NOP,
+	SETRES(true, 6, B),     /* SET 6,B */
+	SETRES(true, 6, C),     /* SET 6,C */
+	SETRES(true, 6, D),     /* SET 6,D */
+	SETRES(true, 6, E),     /* SET 6,E */
+	SETRES(true, 6, H),     /* SET 6,H */
+	SETRES(true, 6, L),     /* SET 6,L */
+	SETRES(true, 6, HLind), /* SET 6,(HL) */
+	SETRES(true, 6, A),     /* SET 6,A */
+	SETRES(true, 7, B),     /* SET 7,B */
+	SETRES(true, 7, C),     /* SET 7,C */
+	SETRES(true, 7, D),     /* SET 7,D */
+	SETRES(true, 7, E),     /* SET 7,E */
+	SETRES(true, 7, H),     /* SET 7,H */
+	SETRES(true, 7, L),     /* SET 7,L */
+	SETRES(true, 7, HLind), /* SET 7,(HL) */
+	SETRES(true, 7, A),     /* SET 7,A */
 }
