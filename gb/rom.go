@@ -25,11 +25,12 @@ type ROM struct {
 	ramSize    byte
 }
 
-func LoadROM(fn string) (*ROM, error) {
+func LoadROMFromFile(fn string) (*ROM, error) {
 	data, err := ioutil.ReadFile(fn)
 	if err != nil {
 		return nil, err
 	}
+	return LoadROM(data)
 	var r ROM
 	r.data = data
 	r.title = string(r.data[0x0134:0x0144])
@@ -38,6 +39,18 @@ func LoadROM(fn string) (*ROM, error) {
 	r.romSize = r.data[0x0148]
 	r.ramSize = r.data[0x0149]
 	return &r, nil
+}
+
+func LoadROM(data []byte) (*ROM, error) {
+	var r ROM
+	r.data = data
+	r.title = string(r.data[0x0134:0x0144])
+	r.sgbSupport = r.data[0x0146] == 0x03
+	r.cartType = r.data[0x0147]
+	r.romSize = r.data[0x0148]
+	r.ramSize = r.data[0x0149]
+	return &r, nil
+
 }
 
 func (r *ROM) HeaderChecksum() byte {

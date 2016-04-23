@@ -137,7 +137,7 @@ func (s *Sys) SetPostBootloaderState() {
 
 func (s *Sys) WriteBytes(bytes []byte, addr uint16) {
 	for _, b := range bytes {
-		s.Wb(addr, b)
+		s.WbLog(addr, b, false)
 		addr++
 	}
 }
