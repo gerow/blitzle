@@ -29,6 +29,13 @@ func S(codeBytes []byte) *Sys {
 	/* And initialize SP to point to the top of normal memory */
 	s.cpu.sp = 0xcfff
 
+	/* Initialize all the gp registers to interesting values */
+	s.cpu.a = 0x01
+	s.cpu.b = 0x02
+	s.cpu.c = 0x03
+	s.cpu.d = 0x04
+	s.cpu.e = 0x05
+
 	return s
 }
 
@@ -112,4 +119,56 @@ func TestLDSPd16(t *testing.T) {
 	checkStep(t, s, 12)
 	checkIP(t, s, 0x103)
 	checkSP(t, s, 0x1234)
+}
+
+func TestLDBCindA(t *testing.T) {
+	s := S([]byte{
+		0x02, // LD (BC),A
+	})
+	s.cpu.b = 0xc0
+	s.cpu.c = 0x00
+
+	checkStep(t, s, 8)
+	checkIP(t, s, 0x101)
+	checkBus(t, s, 0xc000, s.cpu.a)
+}
+
+func TestLDDEindA(t *testing.T) {
+	s := S([]byte{
+		0x12, // LD (DE),A
+	})
+	s.cpu.d = 0xc0
+	s.cpu.e = 0x00
+
+	checkStep(t, s, 8)
+	checkIP(t, s, 0x101)
+	checkBus(t, s, 0xc000, s.cpu.a)
+}
+
+func TestLDHLIindA(t *testing.T) {
+	s := S([]byte{
+		0x22, // LD (HL+),A
+	})
+	s.cpu.h = 0xc0
+	s.cpu.l = 0x00
+
+	checkStep(t, s, 8)
+	checkIP(t, s, 0x101)
+	checkBus(t, s, 0xc000, s.cpu.a)
+	checkBr(t, s, H, 0xc0)
+	checkBr(t, s, L, 0x01)
+}
+
+func TestLDHLDindA(t *testing.T) {
+	s := S([]byte{
+		0x32, // LD (HL-),A
+	})
+	s.cpu.h = 0xc0
+	s.cpu.l = 0x00
+
+	checkStep(t, s, 8)
+	checkIP(t, s, 0x101)
+	checkBus(t, s, 0xc000, s.cpu.a)
+	checkBr(t, s, H, 0xbf)
+	checkBr(t, s, L, 0xff)
 }
