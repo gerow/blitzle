@@ -45,6 +45,21 @@ func (r *RAM) Asserts(addr uint16) bool {
 	return addr >= r.startAddr && addr <= r.endAddr
 }
 
+type MemRegister struct {
+	RAM
+}
+
+func NewMemRegister(addr uint16) *MemRegister {
+	m := &MemRegister{}
+	m.RAM = *NewRAM(addr, addr)
+
+	return m
+}
+
+func (m *MemRegister) val() uint8 {
+	return m.RAM.data[0]
+}
+
 func NewHiRAM() *RAM {
 	return NewRAM(0xff80, 0xffff)
 }
