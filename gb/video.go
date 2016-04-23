@@ -1,16 +1,29 @@
 package gb
 
+const bufferSizeX int = 256
+const bufferSizeY int = 256
+const lcdSizeX int = 160
+const lcdSizeY int = 144
+
+// This value should only be from 0 to 3.
+type Pixel uint8
+
 type Video struct {
 	videoRAM RAM
 	oam      RAM
 	devs     []BusDev
+
+	buf [bufferSizeX * bufferSizeY]Pixel
+	out [lcdSizeX * lcdSizeY]Pixel
 }
 
 func NewVideo() *Video {
-	videoRAM := NewRAM(0x8000, 13)
-	oam := NewRAM(0xfe00, 9)
-	devs := []BusDev{videoRAM, oam}
-	return &Video{*videoRAM, *oam, devs}
+	v := &Video{}
+	v.videoRAM = *NewRAM(0x8000, 13)
+	v.oam = *NewRAM(0xfe00, 9)
+	v.devs = []BusDev{&v.videoRAM, &v.oam}
+
+	return v
 }
 
 func (v *Video) getHandler(addr uint16) BusDev {
