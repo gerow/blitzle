@@ -5,6 +5,11 @@ const bufferSizeY int = 256
 const lcdSizeX int = 160
 const lcdSizeY int = 144
 
+const lcdcRegAddr uint16 = 0xff40
+const statRegAddr uint16 = 0xff41
+const scyRegAddr uint16 = 0xff42
+const scxRegAddr uint16 = 0xff43
+
 // This value should only be from 0 to 3.
 type Pixel uint8
 
@@ -15,6 +20,12 @@ type Video struct {
 
 	buf [bufferSizeX * bufferSizeY]Pixel
 	out [lcdSizeX * lcdSizeY]Pixel
+
+	// Registers
+	lcdc uint8 // FF40h
+	stat uint8 // FF41h
+	scy  uint8 // FF42h
+	scx  uint8 // FF43h
 }
 
 func NewVideo() *Video {
@@ -22,6 +33,7 @@ func NewVideo() *Video {
 	v.videoRAM = *NewRAM(0x8000, 0x9fff)
 	v.oam = *NewRAM(0xfe00, 0xfe9f)
 	v.devs = []BusDev{&v.videoRAM, &v.oam}
+	v.lcdc = 0x91
 
 	return v
 }
