@@ -78,6 +78,7 @@ func TestNOP(t *testing.T) {
 	checkIP(t, s, 0x101)
 }
 
+/* LD xx,$xxxx */
 func TestLDBCd16(t *testing.T) {
 	s := S([]byte{
 		0x01, 0x34, 0x12, // LD BC,$1234
@@ -121,6 +122,7 @@ func TestLDSPd16(t *testing.T) {
 	checkSP(t, s, 0x1234)
 }
 
+/* LD (xx),A */
 func TestLDBCindA(t *testing.T) {
 	s := S([]byte{
 		0x02, // LD (BC),A
@@ -173,6 +175,7 @@ func TestLDHLDindA(t *testing.T) {
 	checkBr(t, s, L, 0xff)
 }
 
+/* INC xx */
 func TestINCBC(t *testing.T) {
 	s := S([]byte{
 		0x03, // INC BC
@@ -221,4 +224,55 @@ func TestINCSP(t *testing.T) {
 	checkStep(t, s, 8)
 	checkIP(t, s, 0x101)
 	checkSP(t, s, 0x1100)
+}
+
+/* DEC xx */
+func TestDECBC(t *testing.T) {
+	s := S([]byte{
+		0x0b, // DEC BC
+	})
+	s.cpu.b = 0x10
+	s.cpu.c = 0x00
+
+	checkStep(t, s, 8)
+	checkIP(t, s, 0x101)
+	checkBr(t, s, B, 0x0f)
+	checkBr(t, s, C, 0xff)
+}
+
+func TestDECDE(t *testing.T) {
+	s := S([]byte{
+		0x1b, // DEC DE
+	})
+	s.cpu.d = 0x10
+	s.cpu.e = 0x00
+
+	checkStep(t, s, 8)
+	checkIP(t, s, 0x101)
+	checkBr(t, s, D, 0x0f)
+	checkBr(t, s, E, 0xff)
+}
+
+func TestDECHL(t *testing.T) {
+	s := S([]byte{
+		0x2b, // DEC HL
+	})
+	s.cpu.h = 0x10
+	s.cpu.l = 0x00
+
+	checkStep(t, s, 8)
+	checkIP(t, s, 0x101)
+	checkBr(t, s, H, 0x0f)
+	checkBr(t, s, L, 0xff)
+}
+
+func TestDECSP(t *testing.T) {
+	s := S([]byte{
+		0x3b, // DEC SP
+	})
+	s.cpu.sp = 0x1000
+
+	checkStep(t, s, 8)
+	checkIP(t, s, 0x101)
+	checkSP(t, s, 0x0fff)
 }
