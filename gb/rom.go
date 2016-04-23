@@ -114,20 +114,12 @@ func (r *ROM) Info() string {
 	return o.String()
 }
 
-func (r *ROM) Rb(addr uint16) uint8 {
+func (r *ROM) R(addr uint16) uint8 {
 	return r.data[addr]
 }
 
-func (r *ROM) Wb(addr uint16, val uint8) {
+func (r *ROM) W(addr uint16, val uint8) {
 	log.Println("Attempt to write to ROM at %04Xh with val %02Xh ignored", addr, val)
-}
-
-func (r *ROM) Rs(addr uint16) uint16 {
-	return uint16(r.data[addr]) | uint16(r.data[addr+1])<<8
-}
-
-func (r *ROM) Ws(addr uint16, val uint16) {
-	log.Println("Attempt to write to ROM at %04Xh with val %04Xh ignored", addr, val)
 }
 
 func (r *ROM) Asserts(addr uint16) bool {

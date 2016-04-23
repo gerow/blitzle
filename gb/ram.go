@@ -31,25 +31,14 @@ func NewRAM(startAddr uint16, endAddr uint16) *RAM {
 	return &RAM{startAddr, endAddr, data}
 }
 
-func (r *RAM) Rb(addr uint16) uint8 {
+func (r *RAM) R(addr uint16) uint8 {
 	addr %= uint16(len(r.data))
 	return r.data[addr]
 }
 
-func (r *RAM) Wb(addr uint16, val uint8) {
+func (r *RAM) W(addr uint16, val uint8) {
 	addr %= uint16(len(r.data))
 	r.data[addr] = val
-}
-
-func (r *RAM) Rs(addr uint16) uint16 {
-	addr %= uint16(len(r.data))
-	return uint16(r.data[addr]) | uint16(r.data[addr+1])<<8
-}
-
-func (r *RAM) Ws(addr uint16, val uint16) {
-	addr %= uint16(len(r.data))
-	r.data[addr] = uint8(val & 0xff)
-	r.data[addr+1] = uint8((val >> 8) & 0xff)
 }
 
 func (r *RAM) Asserts(addr uint16) bool {
@@ -72,20 +61,12 @@ func NewSystemRAM() *SystemRAM {
 	return &SystemRAM{*NewRAM(0xc000, 0xdfff)}
 }
 
-func (sr *SystemRAM) Rb(addr uint16) uint8 {
-	return sr.ram.Rb(addr)
+func (sr *SystemRAM) R(addr uint16) uint8 {
+	return sr.ram.R(addr)
 }
 
-func (sr *SystemRAM) Wb(addr uint16, val uint8) {
-	sr.ram.Wb(addr, val)
-}
-
-func (sr *SystemRAM) Rs(addr uint16) uint16 {
-	return sr.ram.Rs(addr)
-}
-
-func (sr *SystemRAM) Ws(addr uint16, val uint16) {
-	sr.ram.Ws(addr, val)
+func (sr *SystemRAM) W(addr uint16, val uint8) {
+	sr.ram.W(addr, val)
 }
 
 func (sr *SystemRAM) Asserts(addr uint16) bool {

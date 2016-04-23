@@ -16,10 +16,8 @@ type Sys struct {
 }
 
 type BusDev interface {
-	Rb(addr uint16) uint8
-	Wb(addr uint16, val uint8)
-	Rs(addr uint16) uint16
-	Ws(addr uint16, val uint16)
+	R(addr uint16) uint8
+	W(addr uint16, val uint8)
 	Asserts(addr uint16) bool
 }
 
@@ -32,18 +30,11 @@ func NewBusHole(startAddr uint16, endAddr uint16) *BusHole {
 	return &BusHole{startAddr, endAddr}
 }
 
-func (b *BusHole) Rb(addr uint16) uint8 {
+func (b *BusHole) R(addr uint16) uint8 {
 	return 0xff
 }
 
-func (b *BusHole) Wb(addr uint16, val uint8) {
-}
-
-func (b *BusHole) Rs(addr uint16) uint16 {
-	return 0xffff
-}
-
-func (b *BusHole) Ws(addr uint16, val uint16) {
+func (b *BusHole) W(addr uint16, val uint8) {
 }
 
 func (b *BusHole) Asserts(addr uint16) bool {
@@ -87,7 +78,7 @@ func (s *Sys) getHandler(addr uint16) BusDev {
 }
 
 func (s *Sys) RbLog(addr uint16, l bool) uint8 {
-	rv := s.getHandler(addr).Rb(addr)
+	rv := s.getHandler(addr).R(addr)
 	if l {
 		log.Printf("R1 (%04Xh) => %02Xh\n", addr, rv)
 	}
@@ -98,11 +89,11 @@ func (s *Sys) WbLog(addr uint16, val uint8, l bool) {
 	if l {
 		log.Printf("W1 %02Xh => (%04Xh)\n", val, addr)
 	}
-	s.getHandler(addr).Wb(addr, val)
+	s.getHandler(addr).W(addr, val)
 }
 
 func (s *Sys) RsLog(addr uint16, l bool) uint16 {
-	rv := s.getHandler(addr).Rs(addr)
+	rv := uint16(s.RbLog(addr, false)) | uint16(s.RbLog(addr+1, false))<<8
 	if l {
 		log.Printf("R2 (%04Xh) => %04Xh\n", addr, rv)
 	}
@@ -113,7 +104,8 @@ func (s *Sys) WsLog(addr uint16, val uint16, l bool) {
 	if l {
 		log.Printf("W2 %04Xh => (%04Xh)\n", val, addr)
 	}
-	s.getHandler(addr).Ws(addr, val)
+	s.WbLog(addr, uint8(val), false)
+	s.WbLog(addr+1, uint8(val<<8), false)
 }
 
 func (s *Sys) Rb(addr uint16) uint8 {
