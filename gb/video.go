@@ -19,8 +19,8 @@ type Video struct {
 
 func NewVideo() *Video {
 	v := &Video{}
-	v.videoRAM = *NewRAM(0x8000, 13)
-	v.oam = *NewRAM(0xfe00, 9)
+	v.videoRAM = *NewRAM(0x8000, 0x9fff)
+	v.oam = *NewRAM(0xfe00, 0xfe9f)
 	v.devs = []BusDev{&v.videoRAM, &v.oam}
 
 	return v
