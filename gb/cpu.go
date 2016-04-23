@@ -1119,7 +1119,7 @@ var ops [0x100]OpFunc = [0x100]OpFunc{
 	STOP,             /* STOP 0 */
 	LDSImm(DE),       /* LD DE,d16 */
 	LDARegInd(DE, 0), /* LD (DE),A */
-	INCDECS(DE, -1),  /* INC DE */
+	INCDECS(DE, 1),   /* INC DE */
 	INCDECB(D, 1),    /* INC D */
 	INCDECB(D, -1),   /* DEC D */
 	LDBImm(D),        /* LD D,d8 */

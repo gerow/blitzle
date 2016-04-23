@@ -172,3 +172,29 @@ func TestLDHLDindA(t *testing.T) {
 	checkBr(t, s, H, 0xbf)
 	checkBr(t, s, L, 0xff)
 }
+
+func TestINCBC(t *testing.T) {
+	s := S([]byte{
+		0x03, // INC BC
+	})
+	s.cpu.b = 0x10
+	s.cpu.c = 0xff
+
+	checkStep(t, s, 8)
+	checkIP(t, s, 0x101)
+	checkBr(t, s, B, 0x11)
+	checkBr(t, s, C, 0x00)
+}
+
+func TestINCDE(t *testing.T) {
+	s := S([]byte{
+		0x13, // INC DE
+	})
+	s.cpu.d = 0x10
+	s.cpu.e = 0xff
+
+	checkStep(t, s, 8)
+	checkIP(t, s, 0x101)
+	checkBr(t, s, D, 0x11)
+	checkBr(t, s, E, 0x00)
+}
