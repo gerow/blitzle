@@ -198,3 +198,27 @@ func TestINCDE(t *testing.T) {
 	checkBr(t, s, D, 0x11)
 	checkBr(t, s, E, 0x00)
 }
+
+func TestINCHL(t *testing.T) {
+	s := S([]byte{
+		0x23, // INC HL
+	})
+	s.cpu.h = 0x10
+	s.cpu.l = 0xff
+
+	checkStep(t, s, 8)
+	checkIP(t, s, 0x101)
+	checkBr(t, s, H, 0x11)
+	checkBr(t, s, L, 0x00)
+}
+
+func TestINCSP(t *testing.T) {
+	s := S([]byte{
+		0x33, // INC SP
+	})
+	s.cpu.sp = 0x10ff
+
+	checkStep(t, s, 8)
+	checkIP(t, s, 0x101)
+	checkSP(t, s, 0x1100)
+}
