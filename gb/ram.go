@@ -60,8 +60,28 @@ func (m *MemRegister) val() uint8 {
 	return m.RAM.data[0]
 }
 
+func (m *MemRegister) set(val uint8) {
+	m.RAM.data[0] = val
+}
+
 func NewHiRAM() *RAM {
 	return NewRAM(0xff80, 0xffff)
+}
+
+type ReadOnlyRegister struct {
+	addr     uint16
+	readFunc func() uint8
+}
+
+func (r *ReadOnlyRegister) R(_ uint16) uint8 {
+	return r.readFunc()
+}
+
+func (r *ReadOnlyRegister) W(_ uint16, _ uint8) {
+}
+
+func (r *ReadOnlyRegister) Asserts(addr uint16) bool {
+	return addr == r.addr
 }
 
 /*

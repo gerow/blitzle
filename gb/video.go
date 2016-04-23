@@ -22,18 +22,30 @@ type Video struct {
 	out [lcdSizeX * lcdSizeY]Pixel
 
 	// Registers
-	lcdc uint8 // FF40h
-	stat uint8 // FF41h
-	scy  uint8 // FF42h
-	scx  uint8 // FF43h
+	lcdc MemRegister // FF40h
+	//stat uint8       // FF41h
+	scy MemRegister      // FF42h
+	scx MemRegister      // FF43h
+	ly  ReadOnlyRegister // FF44h
 }
 
 func NewVideo() *Video {
 	v := &Video{}
 	v.videoRAM = *NewRAM(0x8000, 0x9fff)
 	v.oam = *NewRAM(0xfe00, 0xfe9f)
-	v.devs = []BusDev{&v.videoRAM, &v.oam}
-	v.lcdc = 0x91
+	v.lcdc = *NewMemRegister(0xff40)
+	v.lcdc.set(0x91)
+	v.scy = *NewMemRegister(0xff42)
+	v.scx = *NewMemRegister(0xff43)
+	v.ly = ReadOnlyRegister{0xff43, v.regLY}
+	v.devs = []BusDev{
+		&v.videoRAM,
+		&v.oam,
+		&v.lcdc,
+		&v.scy,
+		&v.scx,
+		&v.ly,
+	}
 
 	return v
 }
@@ -57,6 +69,10 @@ func (v *Video) W(addr uint16, val uint8) {
 
 func (v *Video) Asserts(addr uint16) bool {
 	return v.getHandler(addr) != nil
+}
+
+func (v *Video) regLY() uint8 {
+	return 0
 }
 
 const nOAMblocks uint = 40
