@@ -432,13 +432,6 @@ func JR(con CPUCond) OpFunc {
 		} else {
 			duration = 8
 		}
-		/*
-		 * Apparently the unconditional JR takes 12 reguardless?
-		 * That doesn't sound right...
-		 */
-		if con == condNone {
-			duration = 12
-		}
 		return duration
 	}
 }
