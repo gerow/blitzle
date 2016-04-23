@@ -2,8 +2,8 @@ package gb
 
 type RAM struct {
 	startAddr uint16
+	endAddr   uint16
 	data      []byte
-	mask      uint16
 }
 
 /*
@@ -25,40 +25,39 @@ type RAM struct {
 1111 F
 */
 
-func NewRAM(startAddr uint16, addrBits uint8) *RAM {
-	mask := uint16((1 << addrBits) - 1)
-	size := 2 << addrBits
+func NewRAM(startAddr uint16, endAddr uint16) *RAM {
+	size := endAddr - startAddr + 1
 	data := make([]byte, size)
-	return &RAM{startAddr, data, mask}
+	return &RAM{startAddr, endAddr, data}
 }
 
 func (r *RAM) Rb(addr uint16) uint8 {
-	addr &= r.mask
+	addr %= uint16(len(r.data))
 	return r.data[addr]
 }
 
 func (r *RAM) Wb(addr uint16, val uint8) {
-	addr &= r.mask
+	addr %= uint16(len(r.data))
 	r.data[addr] = val
 }
 
 func (r *RAM) Rs(addr uint16) uint16 {
-	addr &= r.mask
+	addr %= uint16(len(r.data))
 	return uint16(r.data[addr]) | uint16(r.data[addr+1])<<8
 }
 
 func (r *RAM) Ws(addr uint16, val uint16) {
-	addr &= r.mask
+	addr %= uint16(len(r.data))
 	r.data[addr] = uint8(val & 0xff)
 	r.data[addr+1] = uint8((val >> 8) & 0xff)
 }
 
 func (r *RAM) Asserts(addr uint16) bool {
-	return addr&^r.mask == r.startAddr
+	return addr >= r.startAddr && addr <= r.endAddr
 }
 
 func NewHiRAM() *RAM {
-	return NewRAM(0xff80, 7)
+	return NewRAM(0xff80, 0xffff)
 }
 
 /*
@@ -70,7 +69,7 @@ type SystemRAM struct {
 }
 
 func NewSystemRAM() *SystemRAM {
-	return &SystemRAM{*NewRAM(0xc000, 13)}
+	return &SystemRAM{*NewRAM(0xc000, 0xdfff)}
 }
 
 func (sr *SystemRAM) Rb(addr uint16) uint8 {

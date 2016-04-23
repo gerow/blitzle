@@ -25,12 +25,11 @@ type BusDev interface {
 
 type BusHole struct {
 	startAddr uint16
-	mask      uint16
+	endAddr   uint16
 }
 
-func NewBusHole(startAddr uint16, addrBits uint8) *BusHole {
-	mask := uint16((1 << addrBits) - 1)
-	return &BusHole{startAddr, mask}
+func NewBusHole(startAddr uint16, endAddr uint16) *BusHole {
+	return &BusHole{startAddr, endAddr}
 }
 
 func (b *BusHole) Rb(addr uint16) uint8 {
@@ -48,7 +47,7 @@ func (b *BusHole) Ws(addr uint16, val uint16) {
 }
 
 func (b *BusHole) Asserts(addr uint16) bool {
-	return addr&^b.mask == b.startAddr
+	return addr >= b.startAddr && addr <= b.endAddr
 }
 
 func NewSys(rom ROM) *Sys {
@@ -56,8 +55,9 @@ func NewSys(rom ROM) *Sys {
 	hiRAM := NewHiRAM()
 	video := NewVideo()
 	cpu := NewCPU()
-	bh1 := NewBusHole(0xa000, 13)
-	devs := []BusDev{&rom, systemRAM, hiRAM, video, bh1}
+	bh1 := NewBusHole(0xa000, 0xbfff)
+	bh2 := NewBusHole(0xfea0, 0xff7f)
+	devs := []BusDev{&rom, systemRAM, hiRAM, video, bh1, bh2}
 
 	s := &Sys{rom, *systemRAM, *hiRAM, *video, *cpu, devs, false}
 	s.SetPostBootloaderState()
@@ -82,6 +82,7 @@ func (s *Sys) getHandler(addr uint16) BusDev {
 			return bd
 		}
 	}
+	log.Fatalf("Couldn't find handler for addr %04Xh\n", addr)
 	return nil
 }
 
