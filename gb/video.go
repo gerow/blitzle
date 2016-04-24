@@ -24,9 +24,16 @@ type Video struct {
 	// Registers
 	lcdc MemRegister // FF40h
 	//stat uint8       // FF41h
-	scy MemRegister      // FF42h
-	scx MemRegister      // FF43h
-	ly  ReadOnlyRegister // FF44h
+	scy  MemRegister       // FF42h
+	scx  MemRegister       // FF43h
+	ly   ReadOnlyRegister  // FF44h
+	lyc  MemRegister       // FF45h
+	dma  WriteOnlyRegister // FF46h
+	bgp  MemRegister       // FF47h
+	obp0 MemRegister       // FF48h
+	obp1 MemRegister       // FF49h
+	wy   MemRegister       // FF4ah
+	wx   MemRegister       // FF4bh
 }
 
 func NewVideo() *Video {
@@ -37,7 +44,14 @@ func NewVideo() *Video {
 	v.lcdc.set(0x91)
 	v.scy = *NewMemRegister(0xff42)
 	v.scx = *NewMemRegister(0xff43)
-	v.ly = ReadOnlyRegister{0xff43, v.regLY}
+	v.ly = ReadOnlyRegister{0xff44, v.regLY}
+	v.lyc = *NewMemRegister(0xff45)
+	v.dma = WriteOnlyRegister{0xff46, v.dmaW}
+	v.bgp = *NewMemRegister(0xff47)
+	v.obp0 = *NewMemRegister(0xff48)
+	v.obp1 = *NewMemRegister(0xff49)
+	v.wy = *NewMemRegister(0xff4a)
+	v.wx = *NewMemRegister(0xff4b)
 	v.devs = []BusDev{
 		&v.videoRAM,
 		&v.oam,
@@ -45,6 +59,9 @@ func NewVideo() *Video {
 		&v.scy,
 		&v.scx,
 		&v.ly,
+		&v.lyc,
+		&v.dma,
+		&v.bgp,
 	}
 
 	return v
@@ -73,6 +90,10 @@ func (v *Video) Asserts(addr uint16) bool {
 
 func (v *Video) regLY() uint8 {
 	return 0
+}
+
+func (v *Video) dmaW(val uint8) {
+	/* TODO(gerow): implement DMA! */
 }
 
 const nOAMblocks uint = 40

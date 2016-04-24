@@ -84,6 +84,23 @@ func (r *ReadOnlyRegister) Asserts(addr uint16) bool {
 	return addr == r.addr
 }
 
+type WriteOnlyRegister struct {
+	addr      uint16
+	writeFunc func(uint8)
+}
+
+func (w *WriteOnlyRegister) R(_ uint16) uint8 {
+	return 0xff
+}
+
+func (w *WriteOnlyRegister) W(_ uint16, val uint8) {
+	w.writeFunc(val)
+}
+
+func (w *WriteOnlyRegister) Asserts(addr uint16) bool {
+	return addr == w.addr
+}
+
 /*
  * System RAM needs to assert specially in order to properly do the mirrioring
  * nonsense.
