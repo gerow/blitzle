@@ -17,14 +17,10 @@ type Sys struct {
 	/* Interrupt controller registers */
 	ieReg MemRegister
 	ifReg MemRegister
+	timer Timer
 
-	/* Timer registers */
-	divReg  MemRegister
-	timaReg MemRegister
-	tmaReg  MemRegister
-	tacReg  MemRegister
-	devs    []BusDev
-	Stop    bool
+	devs []BusDev
+	Stop bool
 
 	wall    int
 	cpuWait int
@@ -64,10 +60,7 @@ func NewSys(rom ROM) *Sys {
 	bh1 := NewBusHole(0xa000, 0xbfff)
 	ieReg := NewMemRegister(0xffff)
 	ifReg := NewMemRegister(0xff0f)
-	divReg := NewMemRegister(0xff04)
-	timaReg := NewMemRegister(0xff05)
-	tmaReg := NewMemRegister(0xff06)
-	tacReg := NewMemRegister(0xff07)
+	timer := NewTimer()
 	bh2 := NewBusHole(0xfea0, 0xff7f)
 	devs := []BusDev{
 		&rom,
@@ -77,9 +70,7 @@ func NewSys(rom ROM) *Sys {
 		bh1,
 		ieReg,
 		ifReg,
-		divReg,
-		timaReg,
-		tmaReg,
+		timer,
 		bh2}
 
 	s := &Sys{
@@ -90,10 +81,7 @@ func NewSys(rom ROM) *Sys {
 		*cpu,
 		*ieReg,
 		*ifReg,
-		*divReg,
-		*timaReg,
-		*tmaReg,
-		*tacReg,
+		*timer,
 		devs,
 		false,
 		0,
@@ -116,6 +104,7 @@ func (s *Sys) Run() {
 // Step one clock cycle.
 func (s *Sys) Step() {
 	// Handle timer
+	s.timer.Step(s)
 	if s.cpuWait == 0 {
 		s.cpuWait = s.cpu.Step(s)
 		fmt.Print(s.cpu.State(s))
@@ -125,8 +114,13 @@ func (s *Sys) Step() {
 	s.wall++
 }
 
-func (s *Sys) FreqDiv(d int) bool {
-	return s.wall%d == 0
+/*
+ * This only really works for values that divide evenly with the main clock,
+ * but luckily those are all the values we need!
+ */
+func (s *Sys) FreqStep(desiredFreq uint) bool {
+	divAmt := clkFreq / desiredFreq
+	return uint(s.wall)%divAmt == 0
 }
 
 func (s *Sys) getHandler(addr uint16) BusDev {
@@ -200,11 +194,11 @@ func (s *Sys) WriteBytes(bytes []byte, addr uint16) {
 type Interrupt uint
 
 const (
-	VBlank = iota
-	LCDStat
-	Timer
-	Serial
-	Joypad
+	VBlankInterrupt = iota
+	LCDStatInterrupt
+	TimerInterrupt
+	SerialInterrupt
+	JoypadInterrupt
 	nInterrupts
 )
 
