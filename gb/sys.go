@@ -11,8 +11,14 @@ type Sys struct {
 	hiRAM     RAM
 	video     Video
 	cpu       CPU
-	devs      []BusDev
-	Stop      bool
+	/* Interrupt controller registers */
+	ieReg MemRegister
+	ifReg MemRegister
+	devs  []BusDev
+	Stop  bool
+
+	wall    int
+	cpuWait int
 }
 
 type BusDev interface {
@@ -48,9 +54,22 @@ func NewSys(rom ROM) *Sys {
 	cpu := NewCPU()
 	bh1 := NewBusHole(0xa000, 0xbfff)
 	bh2 := NewBusHole(0xfea0, 0xff7f)
-	devs := []BusDev{&rom, systemRAM, hiRAM, video, bh1, bh2}
+	ieReg := NewMemRegister(0xffff)
+	ifReg := NewMemRegister(0xff0f)
+	devs := []BusDev{&rom, systemRAM, hiRAM, video, bh1, bh2, ieReg, ifReg}
 
-	s := &Sys{rom, *systemRAM, *hiRAM, *video, *cpu, devs, false}
+	s := &Sys{
+		rom,
+		*systemRAM,
+		*hiRAM,
+		*video,
+		*cpu,
+		*ieReg,
+		*ifReg,
+		devs,
+		false,
+		0,
+		0}
 	s.SetPostBootloaderState()
 
 	return s
@@ -62,9 +81,19 @@ func (s *Sys) IER() uint8 {
 
 func (s *Sys) Run() {
 	for {
-		fmt.Print(s.cpu.State(s))
-		s.cpu.Step(s)
+		s.Step()
 	}
+}
+
+// Step one clock cycle.
+func (s *Sys) Step() {
+	if s.cpuWait == 0 {
+		s.cpuWait = s.cpu.Step(s)
+		fmt.Print(s.cpu.State(s))
+	} else {
+		s.cpuWait--
+	}
+	s.wall++
 }
 
 func (s *Sys) getHandler(addr uint16) BusDev {

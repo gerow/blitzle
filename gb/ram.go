@@ -65,7 +65,7 @@ func (m *MemRegister) set(val uint8) {
 }
 
 func NewHiRAM() *RAM {
-	return NewRAM(0xff80, 0xffff)
+	return NewRAM(0xff80, 0xfffe)
 }
 
 type ReadOnlyRegister struct {
