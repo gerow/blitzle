@@ -163,3 +163,32 @@ func (s *Sys) WriteBytes(bytes []byte, addr uint16) {
 		addr++
 	}
 }
+
+type Interrupt uint
+
+const (
+	VBlank = iota
+	LCDStat
+	Timer
+	Serial
+	Joypad
+	nInterrupts
+)
+
+func (s *Sys) RaiseInterrupt(inter Interrupt) {
+	s.ifReg.set(s.ifReg.val() | (1 << inter))
+}
+
+func (s *Sys) HandleInterrupt() *Interrupt {
+	v := s.ifReg.val()
+	for i := Interrupt(0); i < nInterrupts; i++ {
+		if v&(1<<i) != 0 {
+			// Reset the bit and return the val
+			s.ifReg.set(s.ifReg.val() & ^(1 << i))
+			return &i
+		}
+	}
+
+	// If there aren't any interrupts to handle just return nil
+	return nil
+}

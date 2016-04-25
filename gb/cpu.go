@@ -183,6 +183,12 @@ func (c *CPU) cond(con CPUCond) bool {
 }
 
 func (c *CPU) Step(sys *Sys) int {
+	if c.interrupts {
+		interrupt := sys.HandleInterrupt()
+		if interrupt != nil {
+			return c.HandleInterrupt(sys, *interrupt)
+		}
+	}
 	opcode := sys.Rb(c.ip)
 	if opcode == 0xcb {
 		opcode = sys.Rb(c.ip + 1)
@@ -333,6 +339,12 @@ func (c *CPU) wrs(sr ShortRegister, v uint16) {
 	default:
 		panic("received invalid sr")
 	}
+}
+
+func (c *CPU) HandleInterrupt(sys *Sys, interrupt Interrupt) int {
+	c.interrupts = false
+	addr := uint16(0x40 + 8*interrupt)
+	return RST(addr)(c, sys)
 }
 
 type OpFunc func(cpu *CPU, sys *Sys) int
