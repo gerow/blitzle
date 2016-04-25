@@ -105,6 +105,7 @@ func (s *Sys) Run() {
 func (s *Sys) Step() {
 	// Handle timer
 	s.timer.Step(s)
+	s.video.Step(s)
 	if s.cpuWait == 0 {
 		s.cpuWait = s.cpu.Step(s)
 		fmt.Print(s.cpu.State(s))
@@ -189,6 +190,14 @@ func (s *Sys) WriteBytes(bytes []byte, addr uint16) {
 		s.WbLog(addr, b, false)
 		addr++
 	}
+}
+
+func (s *Sys) ReadBytes(addr uint16, len uint16) []byte {
+	o := make([]byte, len)
+	for i := uint16(0); i < len; i++ {
+		o[i] = s.Rb(addr + i)
+	}
+	return o
 }
 
 type Interrupt uint

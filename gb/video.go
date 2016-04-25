@@ -34,7 +34,13 @@ type Video struct {
 	obp1 MemRegister       // FF49h
 	wy   MemRegister       // FF4ah
 	wx   MemRegister       // FF4bh
+
+	doDma  bool
+	dmaSrc uint16
 }
+
+const oamAddr uint16 = 0xfe00
+const oamSize uint16 = 40
 
 func NewVideo() *Video {
 	v := &Video{}
@@ -91,12 +97,21 @@ func (v *Video) Asserts(addr uint16) bool {
 	return v.getHandler(addr) != nil
 }
 
+func (v *Video) Step(sys *Sys) {
+	if v.doDma {
+		v.doDma = false
+		b := sys.ReadBytes(v.dmaSrc, oamSize)
+		sys.WriteBytes(b, oamAddr)
+	}
+}
+
 func (v *Video) regLY() uint8 {
 	return 0
 }
 
 func (v *Video) dmaW(val uint8) {
-	/* TODO(gerow): implement DMA! */
+	v.doDma = true
+	v.dmaSrc = uint16(val) * 0x100
 }
 
 const nOAMblocks uint = 40
