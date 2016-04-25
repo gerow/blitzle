@@ -207,9 +207,11 @@ func (s *Sys) RaiseInterrupt(inter Interrupt) {
 }
 
 func (s *Sys) HandleInterrupt() *Interrupt {
-	v := s.ifReg.val()
+	// Mask the current interrupts with the entabled mask
+	firingInterrupts := s.ifReg.val() & s.ieReg.val()
 	for i := Interrupt(0); i < nInterrupts; i++ {
-		if v&(1<<i) != 0 {
+		// The interrupts are in priority order, so just pick the first one
+		if firingInterrupts&(1<<i) != 0 {
 			// Reset the bit and return the val
 			s.ifReg.set(s.ifReg.val() & ^(1 << i))
 			return &i

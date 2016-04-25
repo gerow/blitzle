@@ -48,8 +48,11 @@ func NewVideo() *Video {
 	v.lyc = *NewMemRegister(0xff45)
 	v.dma = WriteOnlyRegister{0xff46, v.dmaW}
 	v.bgp = *NewMemRegister(0xff47)
+	v.bgp.set(0xfc)
 	v.obp0 = *NewMemRegister(0xff48)
+	v.obp0.set(0xff)
 	v.obp1 = *NewMemRegister(0xff49)
+	v.obp1.set(0xff)
 	v.wy = *NewMemRegister(0xff4a)
 	v.wx = *NewMemRegister(0xff4b)
 	v.devs = []BusDev{
