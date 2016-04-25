@@ -5,6 +5,9 @@ import (
 	"log"
 )
 
+// Main clock frequency (in Hz)
+const clkFreq uint = 4194304
+
 type Sys struct {
 	rom       ROM
 	systemRAM SystemRAM
@@ -14,8 +17,14 @@ type Sys struct {
 	/* Interrupt controller registers */
 	ieReg MemRegister
 	ifReg MemRegister
-	devs  []BusDev
-	Stop  bool
+
+	/* Timer registers */
+	divReg  MemRegister
+	timaReg MemRegister
+	tmaReg  MemRegister
+	tacReg  MemRegister
+	devs    []BusDev
+	Stop    bool
 
 	wall    int
 	cpuWait int
@@ -53,10 +62,25 @@ func NewSys(rom ROM) *Sys {
 	video := NewVideo()
 	cpu := NewCPU()
 	bh1 := NewBusHole(0xa000, 0xbfff)
-	bh2 := NewBusHole(0xfea0, 0xff7f)
 	ieReg := NewMemRegister(0xffff)
 	ifReg := NewMemRegister(0xff0f)
-	devs := []BusDev{&rom, systemRAM, hiRAM, video, bh1, bh2, ieReg, ifReg}
+	divReg := NewMemRegister(0xff04)
+	timaReg := NewMemRegister(0xff05)
+	tmaReg := NewMemRegister(0xff06)
+	tacReg := NewMemRegister(0xff07)
+	bh2 := NewBusHole(0xfea0, 0xff7f)
+	devs := []BusDev{
+		&rom,
+		systemRAM,
+		hiRAM,
+		video,
+		bh1,
+		ieReg,
+		ifReg,
+		divReg,
+		timaReg,
+		tmaReg,
+		bh2}
 
 	s := &Sys{
 		rom,
@@ -66,6 +90,10 @@ func NewSys(rom ROM) *Sys {
 		*cpu,
 		*ieReg,
 		*ifReg,
+		*divReg,
+		*timaReg,
+		*tmaReg,
+		*tacReg,
 		devs,
 		false,
 		0,
@@ -87,6 +115,7 @@ func (s *Sys) Run() {
 
 // Step one clock cycle.
 func (s *Sys) Step() {
+	// Handle timer
 	if s.cpuWait == 0 {
 		s.cpuWait = s.cpu.Step(s)
 		fmt.Print(s.cpu.State(s))
@@ -94,6 +123,10 @@ func (s *Sys) Step() {
 		s.cpuWait--
 	}
 	s.wall++
+}
+
+func (s *Sys) FreqDiv(d int) bool {
+	return s.wall%d == 0
 }
 
 func (s *Sys) getHandler(addr uint16) BusDev {
