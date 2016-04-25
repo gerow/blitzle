@@ -186,7 +186,9 @@ func (c *CPU) Step(sys *Sys) int {
 	if c.interrupts {
 		interrupt := sys.HandleInterrupt()
 		if interrupt != nil {
-			return c.HandleInterrupt(sys, *interrupt)
+			c.interrupts = false
+			addr := uint16(0x40 + 8*uint(*interrupt))
+			return RST(addr)(c, sys)
 		}
 	}
 	opcode := sys.Rb(c.ip)
@@ -339,12 +341,6 @@ func (c *CPU) wrs(sr ShortRegister, v uint16) {
 	default:
 		panic("received invalid sr")
 	}
-}
-
-func (c *CPU) HandleInterrupt(sys *Sys, interrupt Interrupt) int {
-	c.interrupts = false
-	addr := uint16(0x40 + 8*interrupt)
-	return RST(addr)(c, sys)
 }
 
 type OpFunc func(cpu *CPU, sys *Sys) int
