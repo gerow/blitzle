@@ -16,7 +16,7 @@ var tacValToFreq map[uint8]uint = map[uint8]uint{
 	0: 4096,
 	1: 262144,
 	2: 65536,
-	3: 16394,
+	3: 16384,
 }
 
 func NewTimer() *Timer {
