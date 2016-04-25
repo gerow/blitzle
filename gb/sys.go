@@ -55,7 +55,7 @@ func (b *BusHole) Asserts(addr uint16) bool {
 func NewSys(rom ROM) *Sys {
 	systemRAM := NewSystemRAM()
 	hiRAM := NewHiRAM()
-	video := NewVideo()
+	video := NewVideo(func(_ [lcdSizeX * lcdSizeY]byte) {})
 	cpu := NewCPU()
 	bh1 := NewBusHole(0xa000, 0xbfff)
 	ieReg := NewMemRegister(0xffff)

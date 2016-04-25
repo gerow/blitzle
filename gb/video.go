@@ -14,6 +14,7 @@ const scxRegAddr uint16 = 0xff43
 type Pixel uint8
 
 type Video struct {
+	swap     SwapFunc
 	videoRAM RAM
 	oam      RAM
 	devs     []BusDev
@@ -42,8 +43,11 @@ type Video struct {
 const oamAddr uint16 = 0xfe00
 const oamSize uint16 = 40
 
-func NewVideo() *Video {
+type SwapFunc func(pixels [lcdSizeX * lcdSizeY]byte)
+
+func NewVideo(swap SwapFunc) *Video {
 	v := &Video{}
+	v.swap = swap
 	v.videoRAM = *NewRAM(0x8000, 0x9fff)
 	v.oam = *NewRAM(0xfe00, 0xfe9f)
 	v.lcdc = *NewMemRegister(0xff40)
