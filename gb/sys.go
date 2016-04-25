@@ -12,7 +12,7 @@ type Sys struct {
 	rom       ROM
 	systemRAM SystemRAM
 	hiRAM     RAM
-	video     Video
+	video     *Video
 	cpu       CPU
 	/* Interrupt controller registers */
 	ieReg MemRegister
@@ -77,7 +77,7 @@ func NewSys(rom ROM) *Sys {
 		rom,
 		*systemRAM,
 		*hiRAM,
-		*video,
+		video,
 		*cpu,
 		*ieReg,
 		*ifReg,
@@ -108,7 +108,8 @@ func (s *Sys) Step() {
 	s.video.Step(s)
 	if s.cpuWait == 0 {
 		s.cpuWait = s.cpu.Step(s)
-		fmt.Print(s.cpu.State(s))
+		//fmt.Print(s.cpu.State(s))
+		fmt.Print(s.video.State(s))
 	} else {
 		s.cpuWait--
 	}

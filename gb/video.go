@@ -1,5 +1,10 @@
 package gb
 
+import (
+	"bytes"
+	"fmt"
+)
+
 const bufferSizeX int = 256
 const bufferSizeY int = 256
 const lcdSizeX int = 160
@@ -13,6 +18,18 @@ const scxRegAddr uint16 = 0xff43
 // This value should only be from 0 to 3.
 type Pixel uint8
 
+/*
+ * The vsync rate is around 9198 Hz, which gives us a good round 456 cycles per
+ * hsync. Vsync is 59.73 Hz, and doing the math on that gives us 154 hsync
+ * cycles, which is enough to write the 144 lines and then some
+ * (which makes sense).
+ *
+ * This means that a full video cycle should take 70224 cycles.
+ */
+const hCycles int = 456
+const totalCycles int = 70224
+const vblankCycles int = 65664
+
 type Video struct {
 	swap     SwapFunc
 	videoRAM RAM
@@ -23,8 +40,8 @@ type Video struct {
 	out [lcdSizeX * lcdSizeY]Pixel
 
 	// Registers
-	lcdc MemRegister // FF40h
-	//stat uint8       // FF41h
+	lcdc MemRegister       // FF40h
+	stat LCDStatusRegister // FF41h
 	scy  MemRegister       // FF42h
 	scx  MemRegister       // FF43h
 	ly   ReadOnlyRegister  // FF44h
@@ -38,6 +55,8 @@ type Video struct {
 
 	doDma  bool
 	dmaSrc uint16
+
+	currentCycle int
 }
 
 const oamAddr uint16 = 0xfe00
@@ -51,6 +70,7 @@ func NewVideo(swap SwapFunc) *Video {
 	v.videoRAM = *NewRAM(0x8000, 0x9fff)
 	v.oam = *NewRAM(0xfe00, 0xfe9f)
 	v.lcdc = *NewMemRegister(0xff40)
+	v.stat = LCDStatusRegister{v, 0}
 	v.lcdc.set(0x91)
 	v.scy = *NewMemRegister(0xff42)
 	v.scx = *NewMemRegister(0xff43)
@@ -80,6 +100,40 @@ func NewVideo(swap SwapFunc) *Video {
 	return v
 }
 
+type LCDStatusRegister struct {
+	video *Video
+	v     uint8
+}
+
+func (l *LCDStatusRegister) val() uint8 {
+	// Ok, so we're basically saying that we're in mode 2 for 4 cycles,
+	// mode 3 for 4 cycles, and mode 0 for the rest. This is almost
+	// certainly _not_ how the gameboy does it.
+	modeFlag := uint8(0)
+	if l.video.currentCycle >= vblankCycles {
+		modeFlag = 1
+	}
+	hcycleNum := l.video.currentCycle % hCycles
+	if hcycleNum < 4 {
+		modeFlag = 2
+	} else if hcycleNum < 8 {
+		modeFlag = 3
+	}
+	return l.v | modeFlag
+}
+
+func (l *LCDStatusRegister) R(_ uint16) uint8 {
+	return l.val()
+}
+
+func (l *LCDStatusRegister) W(addr uint16, v uint8) {
+	l.v = v & 0xfc
+}
+
+func (l *LCDStatusRegister) Asserts(addr uint16) bool {
+	return addr == 0xff41
+}
+
 func (v *Video) getHandler(addr uint16) BusDev {
 	for _, bd := range v.devs {
 		if bd.Asserts(addr) {
@@ -107,10 +161,38 @@ func (v *Video) Step(sys *Sys) {
 		b := sys.ReadBytes(v.dmaSrc, oamSize)
 		sys.WriteBytes(b, oamAddr)
 	}
+	stat := v.stat.val()
+	if v.currentCycle == vblankCycles {
+		sys.RaiseInterrupt(VBlankInterrupt)
+		// Apparently we can have LCDStatus fire for vsync too
+		if stat&(1<<4) != 0 {
+			sys.RaiseInterrupt(LCDStatInterrupt)
+		}
+	}
+	// Interrupt for mode 2 OAM
+	if v.currentCycle%hCycles == 4 && stat&(1<<5) != 0 {
+		sys.RaiseInterrupt(LCDStatInterrupt)
+	}
+	// Interrupt for LCY==LY
+	if v.currentCycle%hCycles == 0 && v.regLY() == v.lyc.val() {
+		sys.RaiseInterrupt(LCDStatInterrupt)
+	}
+	v.currentCycle++
+	v.currentCycle %= totalCycles
+}
+
+func (v *Video) State(sys *Sys) string {
+	o := bytes.Buffer{}
+	o.WriteString(fmt.Sprintf("Registers:\n"))
+	o.WriteString(fmt.Sprintf("  LY: %02Xh\n", sys.Rb(0xff44)))
+	o.WriteString(fmt.Sprintf("Values:\n"))
+	o.WriteString(fmt.Sprintf("  currentCycle: %v\n", v.currentCycle))
+
+	return o.String()
 }
 
 func (v *Video) regLY() uint8 {
-	return 0
+	return uint8(v.currentCycle / hCycles)
 }
 
 func (v *Video) dmaW(val uint8) {
