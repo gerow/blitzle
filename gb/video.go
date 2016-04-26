@@ -30,6 +30,10 @@ const hCycles int = 456
 const totalCycles int = 70224
 const vblankCycles int = 65664
 
+const mode2Length int = 80
+const mode3Length int = 172
+const mode0Length int = 204
+
 type Video struct {
 	swap     SwapFunc
 	videoRAM RAM
@@ -106,19 +110,20 @@ type LCDStatusRegister struct {
 }
 
 func (l *LCDStatusRegister) val() uint8 {
-	// Ok, so we're basically saying that we're in mode 2 for 4 cycles,
-	// mode 3 for 4 cycles, and mode 0 for the rest. This is almost
-	// certainly _not_ how the gameboy does it.
+	// The actual timings seem to suggest that at the beginning of a line
+	// we'll be in mode 2 for 80 cycles, followed by mode 3 for 172 cycles,
+	// followed by mode 0 for 204 cycles, which adds up nicely to 456.
 	modeFlag := uint8(0)
 	if l.video.currentCycle >= vblankCycles {
 		modeFlag = 1
 	}
 	hcycleNum := l.video.currentCycle % hCycles
-	if hcycleNum < 4 {
+	if hcycleNum < mode2Length {
 		modeFlag = 2
-	} else if hcycleNum < 8 {
+	} else if hcycleNum < mode2Length+mode3Length {
 		modeFlag = 3
 	}
+	// If none of these cases are true we're in mode 0, which lasts 204 cycles
 	return l.v | modeFlag
 }
 
@@ -169,12 +174,12 @@ func (v *Video) Step(sys *Sys) {
 			sys.RaiseInterrupt(LCDStatInterrupt)
 		}
 	}
-	// Interrupt for mode 2 OAM
-	if v.currentCycle%hCycles == 4 && stat&(1<<5) != 0 {
+	// Interrupt for mode 2 OAM (which occurs at the beginning of a new line)
+	if v.currentCycle%hCycles == 0 && stat&(1<<5) != 0 {
 		sys.RaiseInterrupt(LCDStatInterrupt)
 	}
 	// Interrupt for LCY==LY
-	if v.currentCycle%hCycles == 0 && v.regLY() == v.lyc.val() {
+	if v.currentCycle%hCycles == 0 && stat&(1<<6) != 0 && v.regLY() == v.lyc.val() {
 		sys.RaiseInterrupt(LCDStatInterrupt)
 	}
 	v.currentCycle++

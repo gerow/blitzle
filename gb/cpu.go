@@ -188,7 +188,7 @@ func (c *CPU) Step(sys *Sys) int {
 		if interrupt != nil {
 			c.interrupts = false
 			addr := uint16(0x40 + 8*uint(*interrupt))
-			return RST(addr)(c, sys)
+			return RST(addr, true)(c, sys)
 		}
 	}
 	opcode := sys.Rb(c.ip)
@@ -825,9 +825,13 @@ func PUSH(sr ShortRegister) OpFunc {
 	}
 }
 
-func RST(addr uint16) OpFunc {
+func RST(addr uint16, fromInterrupt bool) OpFunc {
 	return func(cpu *CPU, sys *Sys) int {
-		sys.Ws(cpu.sp, cpu.ip+1)
+		ra := cpu.ip
+		if !fromInterrupt {
+			ra += 1
+		}
+		sys.Ws(cpu.sp, ra)
 		cpu.sp -= 2
 		cpu.ip = addr
 
@@ -1312,7 +1316,7 @@ var ops [0x100]OpFunc = [0x100]OpFunc{
 	CALL(condNZ),         /* CALL NZ,a16 */
 	PUSH(BC),             /* PUSH BC */
 	ALU(ADD, Imm),        /* ADD A,d8 */
-	RST(0x00),            /* RST 00H */
+	RST(0x00, false),     /* RST 00H */
 	RET(condZ, false),    /* RET Z */
 	RET(condNone, false), /* RET */
 	JP(condZ),            /* JP Z,a16 */
@@ -1320,7 +1324,7 @@ var ops [0x100]OpFunc = [0x100]OpFunc{
 	CALL(condZ),          /* CALL Z,a16 */
 	CALL(condNone),       /* CALL a16 */
 	ALU(ADC, Imm),        /* ADC A,d8 */
-	RST(0x08),            /* RST 08H */
+	RST(0x08, false),     /* RST 08H */
 	/* 0xd0 */
 	RET(condNC, false),  /* RET NC */
 	POP(DE),             /* POP DE */
@@ -1329,7 +1333,7 @@ var ops [0x100]OpFunc = [0x100]OpFunc{
 	CALL(condNC),        /* CALL NC,a16 */
 	PUSH(DE),            /* PUSH DE */
 	ALU(SUB, Imm),       /* SUB A,d8 */
-	RST(0x10),           /* RST 10H */
+	RST(0x10, false),    /* RST 10H */
 	RET(condC, false),   /* RET C */
 	RET(condNone, true), /* RETI */
 	JP(condC),           /* JP C,a16 */
@@ -1337,7 +1341,7 @@ var ops [0x100]OpFunc = [0x100]OpFunc{
 	CALL(condC),         /* CALL C,a16 */
 	DRAGONS,             /* XXX */
 	ALU(SBC, Imm),       /* SBC A,d8 */
-	RST(0x18),           /* RST 18H */
+	RST(0x18, false),    /* RST 18H */
 	/* 0xe0 */
 	LDH(true),        /* LDH (a8),A */
 	POP(HL),          /* POP HL */
@@ -1346,7 +1350,7 @@ var ops [0x100]OpFunc = [0x100]OpFunc{
 	DRAGONS,          /* XXX */
 	PUSH(HL),         /* PUSH HL */
 	ALU(AND, Imm),    /* AND A,d8 */
-	RST(0x20),        /* RST 20H */
+	RST(0x20, false), /* RST 20H */
 	ADDSPimm,         /* ADD SP,r8 */
 	JPHLind,          /* JP (HL) */
 	LDSimmAddr(true), /* LD (a16),A */
@@ -1354,7 +1358,7 @@ var ops [0x100]OpFunc = [0x100]OpFunc{
 	DRAGONS,          /* XXX */
 	DRAGONS,          /* XXX */
 	ALU(XOR, Imm),    /* XOR A,d8 */
-	RST(0x28),        /* RST 28H */
+	RST(0x28, false), /* RST 28H */
 	/* 0xf0 */
 	LDH(false),       /* LDH A,(a8) */
 	POPAF,            /* POP AF */
@@ -1363,7 +1367,7 @@ var ops [0x100]OpFunc = [0x100]OpFunc{
 	DRAGONS,          /* XXX */
 	PUSH(AF),         /* PUSH AF */
 	ALU(OR, Imm),     /* OR A,d8 */
-	RST(0x30),        /* RST 30H */
+	RST(0x30, false), /* RST 30H */
 	LDHLSPimm,        /* LD HL,SP+r8 */
 	LDSPHL,           /* LD SP,HL */
 	LDSimmAddr(true), /* LD (a16),A */
@@ -1371,7 +1375,7 @@ var ops [0x100]OpFunc = [0x100]OpFunc{
 	DRAGONS,          /* XXX */
 	DRAGONS,          /* XXX */
 	ALU(CP, Imm),     /* CP A,d8 */
-	RST(0x38),        /* RST 38H */
+	RST(0x38, false), /* RST 38H */
 }
 
 var cbops [0x100]OpFunc = [0x100]OpFunc{
