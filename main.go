@@ -4,9 +4,38 @@ import (
 	"flag"
 	"fmt"
 	"github.com/gerow/blitzle/gb"
+	"image"
+	"image/color"
+	"image/png"
 	"log"
 	"os"
 )
+
+var imgNum int = 0
+
+func getColor(p gb.Pixel) *color.Gray {
+	return &color.Gray{uint8(p) * uint8(85)}
+}
+
+func Swap(pixels [gb.LCDSizeX * gb.LCDSizeY]gb.Pixel) {
+	out := image.NewGray(
+		image.Rectangle{
+			image.Point{0, 0},
+			image.Point{int(gb.LCDSizeX), int(gb.LCDSizeY)}})
+	for x := uint(0); x < gb.LCDSizeX; x++ {
+		for y := uint(0); y < gb.LCDSizeY; y++ {
+			out.Set(int(x), int(y), getColor(pixels[y*gb.LCDSizeX+x]))
+		}
+	}
+	filename := fmt.Sprintf("%000000d.png", imgNum)
+	imgNum++
+	file, err := os.Create(filename)
+	defer file.Close()
+	if err != nil {
+		log.Fatal(err)
+	}
+	png.Encode(file, out)
+}
 
 func main() {
 	flag.Usage = func() {
@@ -26,6 +55,6 @@ func main() {
 	}
 	fmt.Print(r.Info())
 
-	sys := gb.NewSys(*r)
+	sys := gb.NewSys(*r, Swap)
 	sys.Run()
 }

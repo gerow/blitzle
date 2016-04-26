@@ -7,8 +7,8 @@ import (
 
 const bufferSizeX uint = 256
 const bufferSizeY uint = 256
-const lcdSizeX uint = 160
-const lcdSizeY uint = 144
+const LCDSizeX uint = 160
+const LCDSizeY uint = 144
 
 const lcdcRegAddr uint16 = 0xff40
 const statRegAddr uint16 = 0xff41
@@ -40,7 +40,7 @@ type Video struct {
 	oam      RAM
 	devs     []BusDev
 
-	buf [lcdSizeX * lcdSizeY]Pixel
+	buf [LCDSizeX * LCDSizeY]Pixel
 
 	// Registers
 	lcdc MemRegister       // FF40h
@@ -65,7 +65,7 @@ type Video struct {
 const oamAddr uint16 = 0xfe00
 const oamSize uint16 = 40
 
-type SwapFunc func(pixels [lcdSizeX * lcdSizeY]Pixel)
+type SwapFunc func(pixels [LCDSizeX * LCDSizeY]Pixel)
 
 func NewVideo(swap SwapFunc) *Video {
 	v := &Video{}
@@ -295,7 +295,7 @@ func (v *Video) drawLine(sys *Sys) {
 	bgMap := v.bgMap(sys)
 	chrTiles := v.chrTiles(sys)
 	// Oh god is this ugly...
-	for x := uint(0); x < lcdSizeX; x++ {
+	for x := uint(0); x < LCDSizeX; x++ {
 		tileColumn := ((xStart + x) / bgMapWidth) % bgMapWidth
 		tileX := (xStart + x) % tileWidth
 		tileNum := bgMap[tileRow*bgMapWidth+tileColumn]
@@ -303,6 +303,6 @@ func (v *Video) drawLine(sys *Sys) {
 		tileIdx := uint(tileNum) * 16
 		tile := chrTiles[tileIdx : tileIdx+16]
 
-		v.buf[ly*lcdSizeX+x] = tilePix(tile, tileX, tileY)
+		v.buf[ly*LCDSizeX+x] = tilePix(tile, tileX, tileY)
 	}
 }

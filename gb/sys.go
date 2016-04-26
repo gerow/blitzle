@@ -1,7 +1,7 @@
 package gb
 
 import (
-	"fmt"
+	//	"fmt"
 	"log"
 )
 
@@ -52,10 +52,10 @@ func (b *BusHole) Asserts(addr uint16) bool {
 	return addr >= b.startAddr && addr <= b.endAddr
 }
 
-func NewSys(rom ROM) *Sys {
+func NewSys(rom ROM, swap SwapFunc) *Sys {
 	systemRAM := NewSystemRAM()
 	hiRAM := NewHiRAM()
-	video := NewVideo(func(_ [lcdSizeX * lcdSizeY]Pixel) {})
+	video := NewVideo(swap)
 	cpu := NewCPU()
 	bh1 := NewBusHole(0xa000, 0xbfff)
 	ieReg := NewMemRegister(0xffff)
@@ -108,8 +108,8 @@ func (s *Sys) Step() {
 	s.video.Step(s)
 	if s.cpuWait == 0 {
 		s.cpuWait = s.cpu.Step(s)
-		fmt.Print(s.cpu.State(s))
-		fmt.Print(s.video.State(s))
+		//fmt.Print(s.cpu.State(s))
+		//fmt.Print(s.video.State(s))
 	} else {
 		s.cpuWait--
 	}
