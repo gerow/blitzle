@@ -119,7 +119,7 @@ func (r *ROM) R(addr uint16) uint8 {
 }
 
 func (r *ROM) W(addr uint16, val uint8) {
-	log.Println("Attempt to write to ROM at %04Xh with val %02Xh ignored", addr, val)
+	log.Printlf("Attempt to write to ROM at %04Xh with val %02Xh ignored", addr, val)
 }
 
 func (r *ROM) Asserts(addr uint16) bool {
