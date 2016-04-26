@@ -739,8 +739,8 @@ func RET(con CPUCond, enableInterrupts bool) OpFunc {
 			cpu.interrupts = true
 		}
 		if cpu.cond(con) {
+			ra := sys.Rs(cpu.sp + 1)
 			cpu.sp += 2
-			ra := sys.Rs(cpu.sp)
 			cpu.ip = ra
 			if con == condNone {
 				return 16
@@ -770,7 +770,8 @@ func CALL(con CPUCond) OpFunc {
 	return func(cpu *CPU, sys *Sys) int {
 		addr := sys.Rs(cpu.ip + 1)
 		if cpu.cond(con) {
-			sys.Ws(cpu.sp, cpu.ip+3)
+			// minus 1 since we're writing two bytes
+			sys.Ws(cpu.sp-1, cpu.ip+3)
 			cpu.sp -= 2
 			cpu.ip = addr
 			return 24

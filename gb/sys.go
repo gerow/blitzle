@@ -163,7 +163,7 @@ func (s *Sys) WsLog(addr uint16, val uint16, l bool) {
 		log.Printf("W2 %04Xh => (%04Xh)\n", val, addr)
 	}
 	s.WbLog(addr, uint8(val), false)
-	s.WbLog(addr+1, uint8(val<<8), false)
+	s.WbLog(addr+1, uint8(val>>8), false)
 }
 
 func (s *Sys) Rb(addr uint16) uint8 {
