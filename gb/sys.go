@@ -55,7 +55,7 @@ func (b *BusHole) Asserts(addr uint16) bool {
 func NewSys(rom ROM) *Sys {
 	systemRAM := NewSystemRAM()
 	hiRAM := NewHiRAM()
-	video := NewVideo(func(_ [lcdSizeX * lcdSizeY]byte) {})
+	video := NewVideo(func(_ [lcdSizeX * lcdSizeY]Pixel) {})
 	cpu := NewCPU()
 	bh1 := NewBusHole(0xa000, 0xbfff)
 	ieReg := NewMemRegister(0xffff)
@@ -196,7 +196,7 @@ func (s *Sys) WriteBytes(bytes []byte, addr uint16) {
 func (s *Sys) ReadBytes(addr uint16, len uint16) []byte {
 	o := make([]byte, len)
 	for i := uint16(0); i < len; i++ {
-		o[i] = s.Rb(addr + i)
+		o[i] = s.RbLog(addr+i, false)
 	}
 	return o
 }

@@ -74,7 +74,7 @@ type ReadOnlyRegister struct {
 }
 
 func (r *ReadOnlyRegister) R(_ uint16) uint8 {
-	return r.readFunc()
+	return r.val()
 }
 
 func (r *ReadOnlyRegister) W(_ uint16, _ uint8) {
@@ -82,6 +82,10 @@ func (r *ReadOnlyRegister) W(_ uint16, _ uint8) {
 
 func (r *ReadOnlyRegister) Asserts(addr uint16) bool {
 	return addr == r.addr
+}
+
+func (r *ReadOnlyRegister) val() uint8 {
+	return r.readFunc()
 }
 
 type WriteOnlyRegister struct {

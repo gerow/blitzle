@@ -5,10 +5,10 @@ import (
 	"fmt"
 )
 
-const bufferSizeX int = 256
-const bufferSizeY int = 256
-const lcdSizeX int = 160
-const lcdSizeY int = 144
+const bufferSizeX uint = 256
+const bufferSizeY uint = 256
+const lcdSizeX uint = 160
+const lcdSizeY uint = 144
 
 const lcdcRegAddr uint16 = 0xff40
 const statRegAddr uint16 = 0xff41
@@ -40,8 +40,7 @@ type Video struct {
 	oam      RAM
 	devs     []BusDev
 
-	buf [bufferSizeX * bufferSizeY]Pixel
-	out [lcdSizeX * lcdSizeY]Pixel
+	buf [lcdSizeX * lcdSizeY]Pixel
 
 	// Registers
 	lcdc MemRegister       // FF40h
@@ -66,7 +65,7 @@ type Video struct {
 const oamAddr uint16 = 0xfe00
 const oamSize uint16 = 40
 
-type SwapFunc func(pixels [lcdSizeX * lcdSizeY]byte)
+type SwapFunc func(pixels [lcdSizeX * lcdSizeY]Pixel)
 
 func NewVideo(swap SwapFunc) *Video {
 	v := &Video{}
@@ -183,14 +182,22 @@ func (v *Video) Step(sys *Sys) {
 		if stat&(1<<4) != 0 {
 			sys.RaiseInterrupt(LCDStatInterrupt)
 		}
+		// We're done drawing lines, so send send the output up to
+		// gl so it can munge it into a gl texture
+		v.swap(v.buf)
 	}
 	// Interrupt for mode 2 OAM (which occurs at the beginning of a new line)
-	if v.currentCycle%hCycles == 0 && stat&(1<<5) != 0 {
+	if v.currentCycle%hCycles == 0 && stat&(1<<5) != 0 && v.currentCycle < vblankCycles {
 		sys.RaiseInterrupt(LCDStatInterrupt)
 	}
 	// Interrupt for LCY==LY
 	if v.currentCycle%hCycles == 0 && stat&(1<<6) != 0 && v.regLY() == v.lyc.val() {
 		sys.RaiseInterrupt(LCDStatInterrupt)
+	}
+	if v.currentCycle%hCycles == mode2Length && v.currentCycle < vblankCycles {
+		// We've reached the end of mode 2, so transition to mode 3 and
+		// zap a line in place!
+		v.drawLine(sys)
 	}
 	v.currentCycle++
 	v.currentCycle %= totalCycles
@@ -254,4 +261,48 @@ func (v *Video) oamBlocks() *[nOAMblocks]OAMblock {
 	}
 
 	return &out
+}
+
+const bgMapWidth uint = 32
+const bgMapHeight uint = 32
+const tileWidth uint = 8
+const tileHeight uint = 8
+
+func (v *Video) bgMap(sys *Sys) []byte {
+	return sys.ReadBytes(0x9800, 0x400)
+}
+
+func (v *Video) chrTiles(sys *Sys) []byte {
+	return sys.ReadBytes(0x8000, 256*16)
+}
+
+func tilePix(chrTile []byte, x uint, y uint) Pixel {
+	b := chrTile[y*2+x/8]
+	inBIdx := x % 8
+	return Pixel((b >> (6 - inBIdx)) & 0x03)
+}
+
+// Draw the current line to the buffer. We do this at the beginning of mode 3
+// since that's when the gameboy no longer expects to be able to write to the
+// OAM or video RAM (although we let it do so anyway).
+func (v *Video) drawLine(sys *Sys) {
+	ly := uint(v.ly.val())
+	y := uint(v.scy.val()) + ly
+	xStart := uint(v.scx.val())
+	// Handle the background first
+	tileRow := (uint(y) / bgMapHeight) % bgMapHeight
+	tileY := uint(y) % tileHeight
+	bgMap := v.bgMap(sys)
+	chrTiles := v.chrTiles(sys)
+	// Oh god is this ugly...
+	for x := uint(0); x < lcdSizeX; x++ {
+		tileColumn := ((xStart + x) / bgMapWidth) % bgMapWidth
+		tileX := (xStart + x) % tileWidth
+		tileNum := bgMap[tileRow*bgMapWidth+tileColumn]
+
+		tileIdx := uint(tileNum) * 16
+		tile := chrTiles[tileIdx : tileIdx+16]
+
+		v.buf[ly*lcdSizeX+x] = tilePix(tile, tileX, tileY)
+	}
 }
