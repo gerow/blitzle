@@ -171,6 +171,11 @@ func (v *Video) Step(sys *Sys) {
 		b := sys.ReadBytes(v.dmaSrc, oamSize)
 		sys.WriteBytes(b, oamAddr)
 	}
+	lcdc := v.lcdc.val()
+	if lcdc&0x80 == 0 {
+		// We're disabled, so don't step at all!
+		return
+	}
 	stat := v.stat.val()
 	if v.currentCycle == vblankCycles {
 		sys.RaiseInterrupt(VBlankInterrupt)
