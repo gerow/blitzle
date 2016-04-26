@@ -108,7 +108,7 @@ func (s *Sys) Step() {
 	s.video.Step(s)
 	if s.cpuWait == 0 {
 		s.cpuWait = s.cpu.Step(s)
-		//fmt.Print(s.cpu.State(s))
+		fmt.Print(s.cpu.State(s))
 		fmt.Print(s.video.State(s))
 	} else {
 		s.cpuWait--

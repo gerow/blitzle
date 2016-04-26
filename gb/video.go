@@ -113,18 +113,22 @@ func (l *LCDStatusRegister) val() uint8 {
 	// The actual timings seem to suggest that at the beginning of a line
 	// we'll be in mode 2 for 80 cycles, followed by mode 3 for 172 cycles,
 	// followed by mode 0 for 204 cycles, which adds up nicely to 456.
-	modeFlag := uint8(0)
+	flags := uint8(0)
 	if l.video.currentCycle >= vblankCycles {
-		modeFlag = 1
+		flags = 1
 	}
 	hcycleNum := l.video.currentCycle % hCycles
 	if hcycleNum < mode2Length {
-		modeFlag = 2
+		flags = 2
 	} else if hcycleNum < mode2Length+mode3Length {
-		modeFlag = 3
+		flags = 3
+	}
+	if l.video.lyc.val() == l.video.regLY() {
+		flags |= 0x4
 	}
 	// If none of these cases are true we're in mode 0, which lasts 204 cycles
-	return l.v | modeFlag
+
+	return l.v | flags
 }
 
 func (l *LCDStatusRegister) R(_ uint16) uint8 {
@@ -132,7 +136,8 @@ func (l *LCDStatusRegister) R(_ uint16) uint8 {
 }
 
 func (l *LCDStatusRegister) W(addr uint16, v uint8) {
-	l.v = v & 0xfc
+	// Mask off the bits that are read-only
+	l.v = v & 0xf8
 }
 
 func (l *LCDStatusRegister) Asserts(addr uint16) bool {
