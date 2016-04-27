@@ -218,6 +218,9 @@ func (c *CPU) State(sys *Sys) string {
 	o.WriteString("  F:  ZNHC0000\n")
 	o.WriteString(fmt.Sprintf("      %08b\n", c.flags()))
 	o.WriteString(fmt.Sprintf("  IP: %04Xh\n", c.ip))
+	if c.ip > 0x8000 && c.ip < 0xff80 {
+		o.WriteString("!! IP outside of ROM/DMA range !!\n")
+	}
 	o.WriteString(fmt.Sprintf("  SP: %04Xh\n", c.sp))
 	o.WriteString(fmt.Sprintf("Area around IP\n"))
 
