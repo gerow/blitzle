@@ -185,10 +185,17 @@ func (c *CPU) Step(sys *Sys) int {
 	if c.interrupts {
 		interrupt := sys.HandleInterrupt()
 		if interrupt != nil {
+			if c.halt {
+				fmt.Printf("HALT ended\n")
+			}
+			c.halt = false
 			c.interrupts = false
 			addr := uint16(0x40 + 8*uint(*interrupt))
 			return RST(addr, true)(c, sys)
 		}
+	}
+	if c.halt {
+		return 4
 	}
 	opcode := sys.Rb(c.ip)
 	if opcode == 0xcb {
@@ -636,6 +643,7 @@ func LDHLBindir(br ByteRegister) OpFunc {
 }
 
 func HALT(cpu *CPU, sys *Sys) int {
+	fmt.Printf("HALT started\n")
 	cpu.halt = true
 
 	cpu.ip++
@@ -794,8 +802,8 @@ func POP(sr ShortRegister) OpFunc {
 	}
 
 	return func(cpu *CPU, sys *Sys) int {
-		cpu.sp -= 2
-		cpu.wrs(sr, sys.Rs(cpu.sp))
+		cpu.wrs(sr, sys.Rs(cpu.sp+1))
+		cpu.sp += 2
 
 		cpu.ip++
 		return 12
@@ -803,8 +811,8 @@ func POP(sr ShortRegister) OpFunc {
 }
 
 func POPAF(cpu *CPU, sys *Sys) int {
-	cpu.sp -= 2
-	af := sys.Rs(cpu.sp)
+	af := sys.Rs(cpu.sp + 1)
+	cpu.sp += 2
 	a := uint8(af >> 8)
 	f := uint8(af & 0xf)
 
@@ -817,8 +825,8 @@ func POPAF(cpu *CPU, sys *Sys) int {
 
 func PUSH(sr ShortRegister) OpFunc {
 	return func(cpu *CPU, sys *Sys) int {
-		sys.Ws(cpu.sp, cpu.rrs(sr))
-		cpu.sp += 2
+		sys.Ws(cpu.sp-1, cpu.rrs(sr))
+		cpu.sp -= 2
 
 		cpu.ip++
 		return 16

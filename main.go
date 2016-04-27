@@ -12,9 +12,15 @@ import (
 )
 
 var imgNum int = 0
+var colorMap map[gb.Pixel]uint8 = map[gb.Pixel]uint8{
+	0: 255,
+	1: 110,
+	2: 64,
+	3: 0,
+}
 
 func getColor(p gb.Pixel) *color.Gray {
-	return &color.Gray{uint8(p) * uint8(85)}
+	return &color.Gray{colorMap[p]}
 }
 
 func Swap(pixels [gb.LCDSizeX * gb.LCDSizeY]gb.Pixel) {

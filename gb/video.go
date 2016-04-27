@@ -200,7 +200,7 @@ func (v *Video) Step(sys *Sys) {
 		// zap a line in place!
 		v.drawLine(sys)
 	}
-	v.currentCycle++
+	v.currentCycle += 4
 	v.currentCycle %= totalCycles
 }
 
@@ -302,7 +302,7 @@ func tilePix(chrTile []byte, x uint, y uint) Pixel {
 func (v *Video) drawLine(sys *Sys) {
 	lcdc := v.lcdc.val()
 	bgMap := v.bgMap(sys, lcdc&0x08 != 0)
-	fmt.Printf("lcdc is %02Xh\n", lcdc)
+	//fmt.Printf("lcdc is %02Xh\n", lcdc)
 	startAt8800 := lcdc&0x10 == 0
 	chrTiles := v.chrTiles(sys, startAt8800)
 
@@ -315,29 +315,30 @@ func (v *Video) drawLine(sys *Sys) {
 	scx := uint(v.scx.val())
 	// Oh god is this ugly...
 	for lcdX := uint(0); lcdX < LCDSizeX; lcdX++ {
-		fmt.Printf("setting %v, %v\n", lcdX, ly)
+		//fmt.Printf("setting %v, %v\n", lcdX, ly)
 		x := scx + lcdX
-		fmt.Printf("location in tilemap %v, %v\n", x, y)
+		//fmt.Printf("location in tilemap %v, %v\n", x, y)
 		tileColumn := (x / bgMapWidth) % bgMapWidth
-		fmt.Printf("tile col/row %v, %v\n", tileColumn, tileRow)
+		//fmt.Printf("tile col/row %v, %v\n", tileColumn, tileRow)
 		tileX := (x) % tileWidth
-		fmt.Printf("in-tile pix offset %v, %v\n", tileX, tileY)
+		//fmt.Printf("in-tile pix offset %v, %v\n", tileX, tileY)
+		//tileNum := bgMap[tileRow*bgMapWidth+tileColumn]
 		tileNum := bgMap[tileRow*bgMapWidth+tileColumn]
 		// These are signed, so remap them
-		fmt.Printf("tile number %v\n", tileNum)
+		//fmt.Printf("tile number %v\n", tileNum)
 		if startAt8800 {
-			old := int(tileNum)
-			if tileNum&0x80 != 0 {
-				old = -int(^uint(tileNum) + 1)
-			}
+			//old := int(tileNum)
+			//if tileNum&0x80 != 0 {
+			//		old = -int(^uint(tileNum) + 1)
+			//	}
 			tileNum += 0x80
-			fmt.Printf("converted from %v to %v\n", old, tileNum)
+			//fmt.Printf("converted from %v to %v\n", old, tileNum)
 		}
 
 		tileStart := uint(tileNum) * 16
-		fmt.Printf("tile start idx %v\n", tileStart)
+		//fmt.Printf("tile start idx %v\n", tileStart)
 		tile := chrTiles[tileStart : tileStart+16]
-		fmt.Printf("Tile raw value %v+\n", tile)
+		//fmt.Printf("Tile raw value %v+\n", tile)
 
 		v.buf[ly*LCDSizeX+lcdX] = tilePix(tile, tileX, tileY)
 	}
