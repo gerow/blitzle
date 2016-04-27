@@ -1,5 +1,10 @@
 package gb
 
+import (
+	"bytes"
+	"fmt"
+)
+
 type Timer struct {
 	divReg  MemRegister
 	timaReg MemRegister
@@ -28,6 +33,17 @@ func NewTimer() *Timer {
 	devs := []BusDev{divReg, timaReg, tmaReg, tacReg}
 
 	return &Timer{*divReg, *timaReg, *tmaReg, *tacReg, devs}
+}
+
+func (t *Timer) State() string {
+	o := bytes.Buffer{}
+	o.WriteString(fmt.Sprintf("Timer:\n"))
+	o.WriteString(fmt.Sprintf("   DIV: %02Xh\n", t.divReg.val()))
+	o.WriteString(fmt.Sprintf("  TIMA: %02Xh\n", t.timaReg.val()))
+	o.WriteString(fmt.Sprintf("   TMA: %02Xh\n", t.tmaReg.val()))
+	o.WriteString(fmt.Sprintf("   TAC: %02Xh\n", t.tacReg.val()))
+
+	return o.String()
 }
 
 func (t *Timer) getHandler(addr uint16) BusDev {

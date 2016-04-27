@@ -109,6 +109,7 @@ func (s *Sys) Step() {
 	if s.cpuWait == 0 {
 		s.cpuWait = s.cpu.Step(s)
 		fmt.Print(s.cpu.State(s))
+		fmt.Printf(s.timer.State())
 		//fmt.Print(s.video.State(s))
 	} else {
 		s.cpuWait -= 4
@@ -212,7 +213,20 @@ const (
 	nInterrupts
 )
 
+var interruptNameMap map[Interrupt]string = map[Interrupt]string{
+	VBlankInterrupt:  "VBlank",
+	LCDStatInterrupt: "LCD stat",
+	TimerInterrupt:   "Timer",
+	SerialInterrupt:  "Serial",
+	JoypadInterrupt:  "Joypad",
+}
+
+func interruptName(intr Interrupt) string {
+	return interruptNameMap[intr]
+}
+
 func (s *Sys) RaiseInterrupt(inter Interrupt) {
+	fmt.Printf("Interrupt %s raised!\n", interruptName(inter))
 	s.ifReg.set(s.ifReg.val() | (1 << inter))
 }
 
@@ -223,6 +237,7 @@ func (s *Sys) HandleInterrupt() *Interrupt {
 		// The interrupts are in priority order, so just pick the first one
 		if firingInterrupts&(1<<i) != 0 {
 			// Reset the bit and return the val
+			fmt.Printf("Interrupt %s getting handled!\n", interruptName(i))
 			s.ifReg.set(s.ifReg.val() & ^(1 << i))
 			return &i
 		}
