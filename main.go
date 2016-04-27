@@ -18,6 +18,10 @@ func getColor(p gb.Pixel) *color.Gray {
 }
 
 func Swap(pixels [gb.LCDSizeX * gb.LCDSizeY]gb.Pixel) {
+	if imgNum%30 != 0 {
+		imgNum++
+		return
+	}
 	out := image.NewGray(
 		image.Rectangle{
 			image.Point{0, 0},

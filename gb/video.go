@@ -172,7 +172,8 @@ func (v *Video) Step(sys *Sys) {
 	}
 	lcdc := v.lcdc.val()
 	if lcdc&0x80 == 0 {
-		// We're disabled, so don't step at all!
+		// We're disabled, so make sure we aren't running!
+		v.currentCycle = 0
 		return
 	}
 	stat := v.stat.val()
@@ -268,41 +269,62 @@ const bgMapHeight uint = 32
 const tileWidth uint = 8
 const tileHeight uint = 8
 
-func (v *Video) bgMap(sys *Sys) []byte {
+func (v *Video) bgMap(sys *Sys, dd2 bool) []byte {
+	if dd2 {
+		return sys.ReadBytes(0x9c00, 0x400)
+	}
 	return sys.ReadBytes(0x9800, 0x400)
 }
 
 func (v *Video) chrTiles(sys *Sys) []byte {
-	return sys.ReadBytes(0x8000, 256*16)
+	return sys.ReadBytes(0x8800, 256*16)
 }
 
 func tilePix(chrTile []byte, x uint, y uint) Pixel {
-	b := chrTile[y*2+x/8]
-	inBIdx := x % 8
-	return Pixel((b >> (6 - inBIdx)) & 0x03)
+	//	b := chrTile[y*2+x/8]
+	lsbByte := chrTile[y*2]
+	msbByte := chrTile[y*2+1]
+	v := ((lsbByte >> (7 - x)) & 1) | (((msbByte >> (7 - x)) & 1) << 1)
+	//fmt.Printf("setting pixel value %v\n", v)
+	return Pixel(v)
+}
+
+func (v *Video) DumpTiles(sys *Sys) {
+	fmt.Printf("tiles: %v\n", v.chrTiles(sys))
 }
 
 // Draw the current line to the buffer. We do this at the beginning of mode 3
 // since that's when the gameboy no longer expects to be able to write to the
 // OAM or video RAM (although we let it do so anyway).
 func (v *Video) drawLine(sys *Sys) {
+	lcdc := v.lcdc.val()
+	bgMap := v.bgMap(sys, lcdc&0x08 != 0)
+	chrTiles := v.chrTiles(sys)
+
+	v.DumpTiles(sys)
 	ly := uint(v.ly.val())
 	y := uint(v.scy.val()) + ly
-	xStart := uint(v.scx.val())
-	// Handle the background first
 	tileRow := (uint(y) / bgMapHeight) % bgMapHeight
 	tileY := uint(y) % tileHeight
-	bgMap := v.bgMap(sys)
-	chrTiles := v.chrTiles(sys)
+
+	scx := uint(v.scx.val())
 	// Oh god is this ugly...
-	for x := uint(0); x < LCDSizeX; x++ {
-		tileColumn := ((xStart + x) / bgMapWidth) % bgMapWidth
-		tileX := (xStart + x) % tileWidth
+	for lcdX := uint(0); lcdX < LCDSizeX; lcdX++ {
+		fmt.Printf("setting %v, %v\n", lcdX, ly)
+		x := scx + lcdX
+		fmt.Printf("location in tilemap %v, %v\n", x, y)
+		tileColumn := (x / bgMapWidth) % bgMapWidth
+		fmt.Printf("tile col/row %v, %v\n", tileColumn, tileRow)
+		tileX := (x) % tileWidth
+		fmt.Printf("in-tile pix offset %v, %v\n", tileX, tileY)
 		tileNum := bgMap[tileRow*bgMapWidth+tileColumn]
 
-		tileIdx := uint(tileNum) * 16
-		tile := chrTiles[tileIdx : tileIdx+16]
+		fmt.Printf("tile number %v\n", tileNum)
+		tileStart := uint(tileNum) * 16
+		fmt.Printf("tile start idx %v\n", tileStart)
+		tile := chrTiles[tileStart : tileStart+16]
+		fmt.Printf("Tile raw value %v+\n", tile)
 
-		v.buf[ly*LCDSizeX+x] = tilePix(tile, tileX, tileY)
+		v.buf[ly*LCDSizeX+lcdX] = tilePix(tile, tileX, tileY)
 	}
 }
