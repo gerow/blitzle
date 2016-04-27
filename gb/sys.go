@@ -135,33 +135,33 @@ func (s *Sys) getHandler(addr uint16) BusDev {
 	return nil
 }
 
-func (s *Sys) RbLog(addr uint16, _ bool) uint8 {
+func (s *Sys) RbLog(addr uint16, l bool) uint8 {
 	rv := s.getHandler(addr).R(addr)
-	//if l {
-	//	log.Printf("R1 (%04Xh) => %02Xh\n", addr, rv)
-	//}
+	if l {
+		log.Printf("R1 (%04Xh) => %02Xh\n", addr, rv)
+	}
 	return rv
 }
 
-func (s *Sys) WbLog(addr uint16, val uint8, _ bool) {
-	//if l {
-	//	log.Printf("W1 %02Xh => (%04Xh)\n", val, addr)
-	//}
+func (s *Sys) WbLog(addr uint16, val uint8, l bool) {
+	if l {
+		log.Printf("W1 %02Xh => (%04Xh)\n", val, addr)
+	}
 	s.getHandler(addr).W(addr, val)
 }
 
-func (s *Sys) RsLog(addr uint16, _ bool) uint16 {
+func (s *Sys) RsLog(addr uint16, l bool) uint16 {
 	rv := uint16(s.RbLog(addr, false)) | uint16(s.RbLog(addr+1, false))<<8
-	//if l {
-	//	log.Printf("R2 (%04Xh) => %04Xh\n", addr, rv)
-	//}
+	if l {
+		log.Printf("R2 (%04Xh) => %04Xh\n", addr, rv)
+	}
 	return rv
 }
 
-func (s *Sys) WsLog(addr uint16, val uint16, _ bool) {
-	//if l {
-	//	log.Printf("W2 %04Xh => (%04Xh)\n", val, addr)
-	//}
+func (s *Sys) WsLog(addr uint16, val uint16, l bool) {
+	if l {
+		log.Printf("W2 %04Xh => (%04Xh)\n", val, addr)
+	}
 	s.WbLog(addr, uint8(val), false)
 	s.WbLog(addr+1, uint8(val>>8), false)
 }
