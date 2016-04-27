@@ -276,8 +276,11 @@ func (v *Video) bgMap(sys *Sys, dd2 bool) []byte {
 	return sys.ReadBytes(0x9800, 0x400)
 }
 
-func (v *Video) chrTiles(sys *Sys) []byte {
-	return sys.ReadBytes(0x8800, 256*16)
+func (v *Video) chrTiles(sys *Sys, startAt8800 bool) []byte {
+	if startAt8800 {
+		return sys.ReadBytes(0x8800, 256*16)
+	}
+	return sys.ReadBytes(0x8000, 256*16)
 }
 
 func tilePix(chrTile []byte, x uint, y uint) Pixel {
@@ -289,9 +292,9 @@ func tilePix(chrTile []byte, x uint, y uint) Pixel {
 	return Pixel(v)
 }
 
-func (v *Video) DumpTiles(sys *Sys) {
-	fmt.Printf("tiles: %v\n", v.chrTiles(sys))
-}
+//func (v *Video) DumpTiles(sys *Sys) {
+//	fmt.Printf("tiles: %v\n", v.chrTiles(sys))
+//}
 
 // Draw the current line to the buffer. We do this at the beginning of mode 3
 // since that's when the gameboy no longer expects to be able to write to the
@@ -299,9 +302,11 @@ func (v *Video) DumpTiles(sys *Sys) {
 func (v *Video) drawLine(sys *Sys) {
 	lcdc := v.lcdc.val()
 	bgMap := v.bgMap(sys, lcdc&0x08 != 0)
-	chrTiles := v.chrTiles(sys)
+	fmt.Printf("lcdc is %02Xh\n", lcdc)
+	startAt8800 := lcdc&0x10 == 0
+	chrTiles := v.chrTiles(sys, startAt8800)
 
-	v.DumpTiles(sys)
+	//v.DumpTiles(sys)
 	ly := uint(v.ly.val())
 	y := uint(v.scy.val()) + ly
 	tileRow := (uint(y) / bgMapHeight) % bgMapHeight
@@ -318,8 +323,17 @@ func (v *Video) drawLine(sys *Sys) {
 		tileX := (x) % tileWidth
 		fmt.Printf("in-tile pix offset %v, %v\n", tileX, tileY)
 		tileNum := bgMap[tileRow*bgMapWidth+tileColumn]
-
+		// These are signed, so remap them
 		fmt.Printf("tile number %v\n", tileNum)
+		if startAt8800 {
+			old := int(tileNum)
+			if tileNum&0x80 != 0 {
+				old = -int(^uint(tileNum) + 1)
+			}
+			tileNum += 0x80
+			fmt.Printf("converted from %v to %v\n", old, tileNum)
+		}
+
 		tileStart := uint(tileNum) * 16
 		fmt.Printf("tile start idx %v\n", tileStart)
 		tile := chrTiles[tileStart : tileStart+16]

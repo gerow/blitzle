@@ -129,7 +129,6 @@ func signExtend(a uint8) uint16 {
 
 func NewCPU() *CPU {
 	cpu := &CPU{}
-	cpu.interrupts = true
 
 	return cpu
 }
