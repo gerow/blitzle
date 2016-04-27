@@ -74,7 +74,7 @@ func NewVideo(swap SwapFunc) *Video {
 	v.oam = *NewRAM(0xfe00, 0xfe9f)
 	v.lcdc = *NewMemRegister(0xff40)
 	v.stat = LCDStatusRegister{v, 0}
-	v.lcdc.set(0x91)
+	v.lcdc.set(0x83)
 	v.scy = *NewMemRegister(0xff42)
 	v.scx = *NewMemRegister(0xff43)
 	v.ly = ReadOnlyRegister{0xff44, v.regLY}
