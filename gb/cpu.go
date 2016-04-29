@@ -221,6 +221,9 @@ func (c *CPU) State(sys *Sys) string {
 	if c.ip > 0x8000 && c.ip < 0xff80 {
 		o.WriteString("!! IP outside of ROM/DMA range !!\n")
 	}
+	if c.ip == 0x0038 {
+		o.WriteString("!!??!!\n")
+	}
 	o.WriteString(fmt.Sprintf("  SP: %04Xh\n", c.sp))
 	o.WriteString(fmt.Sprintf("Area around IP\n"))
 
@@ -842,7 +845,7 @@ func RST(addr uint16, fromInterrupt bool) OpFunc {
 		if !fromInterrupt {
 			ra += 1
 		}
-		sys.Ws(cpu.sp, ra)
+		sys.Ws(cpu.sp-1, ra)
 		cpu.sp -= 2
 		cpu.ip = addr
 

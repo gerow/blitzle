@@ -238,7 +238,9 @@ func (s *Sys) HandleInterrupt() *Interrupt {
 		if firingInterrupts&(1<<i) != 0 {
 			// Reset the bit and return the val
 			fmt.Printf("Interrupt %s getting handled!\n", interruptName(i))
+			fmt.Printf("ifreg was %02Xh\n", s.ifReg.val())
 			s.ifReg.set(s.ifReg.val() & ^(1 << i))
+			fmt.Printf("now is %02Xh\n", s.ifReg.val())
 			return &i
 		}
 	}
