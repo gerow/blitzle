@@ -355,6 +355,17 @@ func (c *CPU) wrs(sr ShortRegister, v uint16) {
 	}
 }
 
+func (c *CPU) Push(sys *Sys, v uint16) {
+	sys.Ws(c.sp-2, v)
+	c.sp -= 2
+}
+
+func (c *CPU) Pop(sys *Sys) uint16 {
+	rv := sys.Rs(c.sp)
+	c.sp += 2
+	return rv
+}
+
 type OpFunc func(cpu *CPU, sys *Sys) int
 
 func NOP(cpu *CPU, sys *Sys) int {
@@ -752,8 +763,7 @@ func RET(con CPUCond, enableInterrupts bool) OpFunc {
 			cpu.interrupts = true
 		}
 		if cpu.cond(con) {
-			ra := sys.Rs(cpu.sp + 1)
-			cpu.sp += 2
+			ra := cpu.Pop(sys)
 			cpu.ip = ra
 			if con == condNone {
 				return 16
@@ -783,9 +793,7 @@ func CALL(con CPUCond) OpFunc {
 	return func(cpu *CPU, sys *Sys) int {
 		addr := sys.Rs(cpu.ip + 1)
 		if cpu.cond(con) {
-			// minus 1 since we're writing two bytes
-			sys.Ws(cpu.sp-1, cpu.ip+3)
-			cpu.sp -= 2
+			cpu.Push(sys, cpu.ip+3)
 			cpu.ip = addr
 			return 24
 		} else {
@@ -808,8 +816,7 @@ func POP(sr ShortRegister) OpFunc {
 	}
 
 	return func(cpu *CPU, sys *Sys) int {
-		cpu.wrs(sr, sys.Rs(cpu.sp+1))
-		cpu.sp += 2
+		cpu.wrs(sr, cpu.Pop(sys))
 
 		cpu.ip++
 		return 12
@@ -817,8 +824,7 @@ func POP(sr ShortRegister) OpFunc {
 }
 
 func POPAF(cpu *CPU, sys *Sys) int {
-	af := sys.Rs(cpu.sp + 1)
-	cpu.sp += 2
+	af := cpu.Pop(sys)
 	a := uint8(af >> 8)
 	f := uint8(af & 0xf0)
 
@@ -831,8 +837,7 @@ func POPAF(cpu *CPU, sys *Sys) int {
 
 func PUSH(sr ShortRegister) OpFunc {
 	return func(cpu *CPU, sys *Sys) int {
-		sys.Ws(cpu.sp-1, cpu.rrs(sr))
-		cpu.sp -= 2
+		cpu.Push(sys, cpu.rrs(sr))
 
 		cpu.ip++
 		return 16
@@ -845,8 +850,7 @@ func RST(addr uint16, fromInterrupt bool) OpFunc {
 		if !fromInterrupt {
 			ra += 1
 		}
-		sys.Ws(cpu.sp-1, ra)
-		cpu.sp -= 2
+		cpu.Push(sys, ra)
 		cpu.ip = addr
 
 		return 16
