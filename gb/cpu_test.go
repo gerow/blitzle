@@ -20,7 +20,7 @@ func FakeROM(codeBytes []byte) *ROM {
 
 func S(codeBytes []byte) *Sys {
 	r := FakeROM(codeBytes)
-	s := NewSys(*r)
+	s := NewSys(r, nil)
 
 	/* Initialize hl to point to some location in RAM */
 	s.cpu.h = 0xc0

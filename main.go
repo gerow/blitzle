@@ -65,6 +65,6 @@ func main() {
 	}
 	fmt.Print(r.Info())
 
-	sys := gb.NewSys(*r, Swap)
+	sys := gb.NewSys(r, Swap)
 	sys.Run()
 }

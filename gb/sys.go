@@ -9,15 +9,15 @@ import (
 const clkFreq uint = 4194304
 
 type Sys struct {
-	rom       ROM
-	systemRAM SystemRAM
-	hiRAM     RAM
+	rom       *ROM
+	systemRAM *SystemRAM
+	hiRAM     *RAM
 	video     *Video
-	cpu       CPU
+	cpu       *CPU
 	/* Interrupt controller registers */
-	ieReg MemRegister
-	ifReg MemRegister
-	timer Timer
+	ieReg *MemRegister
+	ifReg *MemRegister
+	timer *Timer
 
 	devs []BusDev
 	Stop bool
@@ -52,7 +52,7 @@ func (b *BusHole) Asserts(addr uint16) bool {
 	return addr >= b.startAddr && addr <= b.endAddr
 }
 
-func NewSys(rom ROM, swap SwapFunc) *Sys {
+func NewSys(rom *ROM, swap SwapFunc) *Sys {
 	systemRAM := NewSystemRAM()
 	hiRAM := NewHiRAM()
 	video := NewVideo(swap)
@@ -63,7 +63,7 @@ func NewSys(rom ROM, swap SwapFunc) *Sys {
 	timer := NewTimer()
 	bh2 := NewBusHole(0xfea0, 0xff7f)
 	devs := []BusDev{
-		&rom,
+		rom,
 		systemRAM,
 		hiRAM,
 		video,
@@ -75,13 +75,13 @@ func NewSys(rom ROM, swap SwapFunc) *Sys {
 
 	s := &Sys{
 		rom,
-		*systemRAM,
-		*hiRAM,
+		systemRAM,
+		hiRAM,
 		video,
-		*cpu,
-		*ieReg,
-		*ifReg,
-		*timer,
+		cpu,
+		ieReg,
+		ifReg,
+		timer,
 		devs,
 		false,
 		0,
