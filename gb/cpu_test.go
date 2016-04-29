@@ -276,3 +276,13 @@ func TestDECSP(t *testing.T) {
 	checkIP(t, s, 0x101)
 	checkSP(t, s, 0x0fff)
 }
+
+func TestJPHL(t *testing.T) {
+	s := S([]byte{
+		0xe9, // JP (HL)
+	})
+	s.cpu.h = 0xab
+	s.cpu.l = 0xcd
+	checkStep(t, s, 4)
+	checkIP(t, s, 0xabcd)
+}

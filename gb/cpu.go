@@ -796,7 +796,7 @@ func CALL(con CPUCond) OpFunc {
 }
 
 func JPHLind(cpu *CPU, sys *Sys) int {
-	addr := sys.Rs(cpu.rrs(HL))
+	addr := cpu.rrs(HL)
 	cpu.ip = addr
 
 	return 4
@@ -820,7 +820,7 @@ func POPAF(cpu *CPU, sys *Sys) int {
 	af := sys.Rs(cpu.sp + 1)
 	cpu.sp += 2
 	a := uint8(af >> 8)
-	f := uint8(af & 0xf)
+	f := uint8(af & 0xf0)
 
 	cpu.setFlags(f)
 	cpu.a = a
