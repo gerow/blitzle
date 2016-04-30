@@ -36,25 +36,25 @@ const mode0Length int = 204
 
 type Video struct {
 	swap     SwapFunc
-	videoRAM RAM
-	oam      RAM
+	videoRAM *RAM
+	oam      *RAM
 	devs     []BusDev
 
 	buf [LCDSizeX * LCDSizeY]Pixel
 
 	// Registers
-	lcdc MemRegister       // FF40h
-	stat LCDStatusRegister // FF41h
-	scy  MemRegister       // FF42h
-	scx  MemRegister       // FF43h
-	ly   ReadOnlyRegister  // FF44h
-	lyc  MemRegister       // FF45h
-	dma  WriteOnlyRegister // FF46h
-	bgp  MemRegister       // FF47h
-	obp0 MemRegister       // FF48h
-	obp1 MemRegister       // FF49h
-	wy   MemRegister       // FF4ah
-	wx   MemRegister       // FF4bh
+	lcdc *MemRegister       // FF40h
+	stat *LCDStatusRegister // FF41h
+	scy  *MemRegister       // FF42h
+	scx  *MemRegister       // FF43h
+	ly   *ReadOnlyRegister  // FF44h
+	lyc  *MemRegister       // FF45h
+	dma  *WriteOnlyRegister // FF46h
+	bgp  *MemRegister       // FF47h
+	obp0 *MemRegister       // FF48h
+	obp1 *MemRegister       // FF49h
+	wy   *MemRegister       // FF4ah
+	wx   *MemRegister       // FF4bh
 
 	doDma  bool
 	dmaSrc uint16
@@ -70,34 +70,38 @@ type SwapFunc func(pixels [LCDSizeX * LCDSizeY]Pixel)
 func NewVideo(swap SwapFunc) *Video {
 	v := &Video{}
 	v.swap = swap
-	v.videoRAM = *NewRAM(0x8000, 0x9fff)
-	v.oam = *NewRAM(0xfe00, 0xfe9f)
-	v.lcdc = *NewMemRegister(0xff40)
-	v.stat = LCDStatusRegister{v, 0}
+	v.videoRAM = NewRAM(0x8000, 0x9fff)
+	v.oam = NewRAM(0xfe00, 0xfe9f)
+	v.lcdc = NewMemRegister(0xff40)
+	v.stat = &LCDStatusRegister{v, 0}
 	v.lcdc.set(0x83)
-	v.scy = *NewMemRegister(0xff42)
-	v.scx = *NewMemRegister(0xff43)
-	v.ly = ReadOnlyRegister{0xff44, v.regLY}
-	v.lyc = *NewMemRegister(0xff45)
-	v.dma = WriteOnlyRegister{0xff46, v.dmaW}
-	v.bgp = *NewMemRegister(0xff47)
+	v.scy = NewMemRegister(0xff42)
+	v.scx = NewMemRegister(0xff43)
+	v.ly = &ReadOnlyRegister{0xff44, v.regLY}
+	v.lyc = NewMemRegister(0xff45)
+	v.dma = &WriteOnlyRegister{0xff46, v.dmaW}
+	v.bgp = NewMemRegister(0xff47)
 	v.bgp.set(0xfc)
-	v.obp0 = *NewMemRegister(0xff48)
+	v.obp0 = NewMemRegister(0xff48)
 	v.obp0.set(0xff)
-	v.obp1 = *NewMemRegister(0xff49)
+	v.obp1 = NewMemRegister(0xff49)
 	v.obp1.set(0xff)
-	v.wy = *NewMemRegister(0xff4a)
-	v.wx = *NewMemRegister(0xff4b)
+	v.wy = NewMemRegister(0xff4a)
+	v.wx = NewMemRegister(0xff4b)
 	v.devs = []BusDev{
-		&v.videoRAM,
-		&v.oam,
-		&v.lcdc,
-		&v.scy,
-		&v.scx,
-		&v.ly,
-		&v.lyc,
-		&v.dma,
-		&v.bgp,
+		v.videoRAM,
+		v.oam,
+		v.lcdc,
+		v.scy,
+		v.scx,
+		v.ly,
+		v.lyc,
+		v.dma,
+		v.bgp,
+		v.obp0,
+		v.obp1,
+		v.wy,
+		v.wx,
 	}
 
 	return v
