@@ -92,6 +92,7 @@ func NewVideo(swap SwapFunc) *Video {
 		v.videoRAM,
 		v.oam,
 		v.lcdc,
+		v.stat,
 		v.scy,
 		v.scx,
 		v.ly,

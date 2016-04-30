@@ -49,4 +49,12 @@ func TestCorrectThingAsserts(t *testing.T) {
 	if s.getHandler(0xff0f) != s.ifReg {
 		t.Errorf("expected %04Xh to be handled by ifReg\n", 0xff0f)
 	}
+
+	vidRegs := []uint16{0xff41, 0xff40, 0xff48, 0xff42, 0xff43, 0xff44, 0xff45,
+		0xff4a, 0xff4b, 0xff47, 0xff48, 0xff49, 0xff46}
+	for _, addr := range vidRegs {
+		if s.getHandler(addr) != s.video {
+			t.Errorf("expected %04Xh to be handled by video, got %+v\n", addr, s.getHandler(addr))
+		}
+	}
 }
