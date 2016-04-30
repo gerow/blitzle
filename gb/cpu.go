@@ -544,7 +544,7 @@ func ADDS(sr ShortRegister) OpFunc {
 func LDBInd(destReg ByteRegister, srcAddrReg ShortRegister, mod int) OpFunc {
 	return func(cpu *CPU, sys *Sys) int {
 		addr := cpu.rrs(srcAddrReg)
-		cpu.wrb(A, sys.Rb(addr))
+		cpu.wrb(destReg, sys.Rb(addr))
 		if mod != 0 {
 			cpu.wrs(srcAddrReg, addr+1)
 		}
