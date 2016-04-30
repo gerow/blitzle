@@ -6,10 +6,10 @@ import (
 )
 
 type Timer struct {
-	divReg  MemRegister
-	timaReg MemRegister
-	tmaReg  MemRegister
-	tacReg  MemRegister
+	divReg  *MemRegister
+	timaReg *MemRegister
+	tmaReg  *MemRegister
+	tacReg  *MemRegister
 
 	devs []BusDev
 }
@@ -32,7 +32,7 @@ func NewTimer() *Timer {
 
 	devs := []BusDev{divReg, timaReg, tmaReg, tacReg}
 
-	return &Timer{*divReg, *timaReg, *tmaReg, *tacReg, devs}
+	return &Timer{divReg, timaReg, tmaReg, tacReg, devs}
 }
 
 func (t *Timer) State() string {
