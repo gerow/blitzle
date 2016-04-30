@@ -57,4 +57,10 @@ func TestCorrectThingAsserts(t *testing.T) {
 			t.Errorf("expected %04Xh to be handled by video, got %+v\n", addr, s.getHandler(addr))
 		}
 	}
+	timerRegs := []uint16{0xff04, 0xff05, 0xff06, 0xff07}
+	for _, addr := range timerRegs {
+		if s.getHandler(addr) != s.timer {
+			t.Errorf("expected %04Xh to be handled by timer, got %+v\n", addr, s.getHandler(addr))
+		}
+	}
 }
