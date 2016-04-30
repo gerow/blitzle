@@ -315,7 +315,7 @@ func (v *Video) drawLine(sys *Sys) {
 	//v.DumpTiles(sys)
 	ly := uint(v.ly.val())
 	y := uint(v.scy.val()) + ly
-	tileRow := (uint(y) / bgMapHeight) % bgMapHeight
+	tileRow := (uint(y) / tileHeight) % bgMapHeight
 	tileY := uint(y) % tileHeight
 
 	scx := uint(v.scx.val())
@@ -324,7 +324,7 @@ func (v *Video) drawLine(sys *Sys) {
 		//fmt.Printf("setting %v, %v\n", lcdX, ly)
 		x := scx + lcdX
 		//fmt.Printf("location in tilemap %v, %v\n", x, y)
-		tileColumn := (x / bgMapWidth) % bgMapWidth
+		tileColumn := (x / tileWidth) % bgMapWidth
 		//fmt.Printf("tile col/row %v, %v\n", tileColumn, tileRow)
 		tileX := (x) % tileWidth
 		//fmt.Printf("in-tile pix offset %v, %v\n", tileX, tileY)
