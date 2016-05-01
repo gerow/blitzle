@@ -57,7 +57,6 @@ func NewSys(rom *ROM, swap SwapFunc) *Sys {
 	hiRAM := NewHiRAM()
 	video := NewVideo(swap)
 	cpu := NewCPU()
-	bh1 := NewBusHole(0xa000, 0xbfff)
 	ieReg := NewMemRegister(0xffff)
 	ifReg := NewMemRegister(0xff0f)
 	timer := NewTimer()
@@ -67,7 +66,6 @@ func NewSys(rom *ROM, swap SwapFunc) *Sys {
 		systemRAM,
 		hiRAM,
 		video,
-		bh1,
 		ieReg,
 		ifReg,
 		timer,

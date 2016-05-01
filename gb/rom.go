@@ -17,16 +17,30 @@ var expectedLogo []byte = []byte{
 var romMask uint16 = (1 << 15) - 1
 
 const bankSize uint = 0x4000
+const ramBankSize uint = 0x2000
+
+var ramSizeMap map[byte]uint = map[byte]uint{
+	0: 0,
+	1: 0x800,
+	2: 0x2000,
+	3: 0x8000,
+	4: 0x20000,
+	5: 0x10000,
+}
 
 type ROM struct {
-	data        []byte
-	title       string
-	sgbSupport  bool
-	cartType    byte
-	romSize     byte
-	ramSize     byte
-	banks       [][]byte
-	currentBank uint
+	data           []byte
+	title          string
+	sgbSupport     bool
+	cartType       byte
+	romSize        byte
+	ramSize        byte
+	banks          [][]byte
+	currentBank    uint
+	ram            []byte
+	ramBanks       [][]byte
+	currentRAMBank uint
+	ramEnabled     bool
 }
 
 func LoadROMFromFile(fn string) (*ROM, error) {
@@ -49,6 +63,7 @@ func LoadROM(data []byte) (*ROM, error) {
 		return nil, fmt.Errorf("wrongly sized banks")
 	}
 
+	// Record ROM banks
 	nBanks := uint(len(r.data)) / bankSize
 	r.banks = make([][]byte, nBanks)
 	for i := uint(0); i < nBanks; i++ {
@@ -56,6 +71,21 @@ func LoadROM(data []byte) (*ROM, error) {
 		r.banks[i] = r.data[addr : addr+bankSize]
 	}
 	r.currentBank = 1
+
+	// Record RAM banks
+	r.ram = make([]byte, ramSizeMap[r.ramSize])
+	nRamBanks := uint(len(r.ram)) / ramBankSize
+	r.ramBanks = make([][]byte, nRamBanks)
+	// Special case here since $01 is smaller than a full bank
+	if nRamBanks == 1 {
+		r.ramBanks[0] = r.ram
+	} else {
+		for i := uint(0); i < nRamBanks; i++ {
+			addr := uint(i * ramBankSize)
+			r.ramBanks[i] = r.ram[addr : addr+ramBankSize]
+		}
+	}
+
 	return &r, nil
 }
 
@@ -124,12 +154,22 @@ func (r *ROM) Info() string {
 func (r *ROM) R(addr uint16) uint8 {
 	if addr < 0x4000 {
 		return r.data[addr]
+	} else if addr < 0x8000 {
+		return r.banks[r.currentBank][addr-0x4000]
 	}
-	return r.banks[r.currentBank][addr-0x4000]
+	if !r.ramEnabled {
+		log.Printf("!!! Attempt to read from cart RAM when disabled\n")
+		return 0xff
+	}
+	return r.ramBanks[r.currentRAMBank][addr-0xa000]
 }
 
 func (r *ROM) W(addr uint16, val uint8) {
 	// Only works with MBC3 now
+	if addr >= 0x0000 && addr < 0x2000 {
+		r.ramEnabled = val&0x0a == 0x0a
+		return
+	}
 	if addr >= 0x2000 && addr < 0x4000 {
 		newBank := uint(val)
 		if newBank == 0 {
@@ -141,11 +181,27 @@ func (r *ROM) W(addr uint16, val uint8) {
 		r.currentBank = newBank % uint(len(r.banks))
 		return
 	}
+	if addr >= 0x4000 && addr < 0x6000 {
+		newBank := uint(val)
+		if newBank/uint(len(r.ramBanks)) != 0 {
+			log.Printf("!!! Attempt to switch to ROM bank beyond number in cart %04Xh\n", val)
+		}
+		r.currentRAMBank = newBank % uint(len(r.ramBanks))
+		return
+	}
+	if addr >= 0xa000 && addr < 0xc000 {
+		if !r.ramEnabled {
+			log.Printf("!!! Attempt to write to cart RAM when disabled\n")
+			return
+		}
+		r.ramBanks[r.currentRAMBank][addr-0xa000] = val
+		return
+	}
 	log.Printf("Attempt to write to ROM at %04Xh with val %02Xh ignored", addr, val)
 }
 
 func (r *ROM) Asserts(addr uint16) bool {
-	return addr&^romMask == 0x0000
+	return addr < 0x8000 || (addr >= 0xa000 && addr < 0xc000)
 }
 
 func (r *ROM) Dump() {
