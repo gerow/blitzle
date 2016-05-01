@@ -16,13 +16,17 @@ var expectedLogo []byte = []byte{
 
 var romMask uint16 = (1 << 15) - 1
 
+const bankSize uint = 0x4000
+
 type ROM struct {
-	data       []byte
-	title      string
-	sgbSupport bool
-	cartType   byte
-	romSize    byte
-	ramSize    byte
+	data        []byte
+	title       string
+	sgbSupport  bool
+	cartType    byte
+	romSize     byte
+	ramSize     byte
+	banks       [][]byte
+	currentBank uint
 }
 
 func LoadROMFromFile(fn string) (*ROM, error) {
@@ -31,14 +35,6 @@ func LoadROMFromFile(fn string) (*ROM, error) {
 		return nil, err
 	}
 	return LoadROM(data)
-	var r ROM
-	r.data = data
-	r.title = string(r.data[0x0134:0x0144])
-	r.sgbSupport = r.data[0x0146] == 0x03
-	r.cartType = r.data[0x0147]
-	r.romSize = r.data[0x0148]
-	r.ramSize = r.data[0x0149]
-	return &r, nil
 }
 
 func LoadROM(data []byte) (*ROM, error) {
@@ -49,8 +45,18 @@ func LoadROM(data []byte) (*ROM, error) {
 	r.cartType = r.data[0x0147]
 	r.romSize = r.data[0x0148]
 	r.ramSize = r.data[0x0149]
-	return &r, nil
+	if uint(len(r.data))%bankSize != 0 {
+		return nil, fmt.Errorf("wrongly sized banks")
+	}
 
+	nBanks := uint(len(r.data)) / bankSize
+	r.banks = make([][]byte, nBanks)
+	for i := uint(0); i < nBanks; i++ {
+		addr := uint(i * bankSize)
+		r.banks[i] = r.data[addr : addr+bankSize]
+	}
+	r.currentBank = 1
+	return &r, nil
 }
 
 func (r *ROM) HeaderChecksum() byte {
@@ -110,15 +116,31 @@ func (r *ROM) Info() string {
 		globalCheck = "✓"
 	}
 	o.WriteString(fmt.Sprintf("Global checksum: %s\n", globalCheck))
+	o.WriteString(fmt.Sprintf("4k banks in ROM file: %d\n", len(r.banks)))
 
 	return o.String()
 }
 
 func (r *ROM) R(addr uint16) uint8 {
-	return r.data[addr]
+	if addr < 0x4000 {
+		return r.data[addr]
+	}
+	return r.banks[r.currentBank][addr-0x4000]
 }
 
 func (r *ROM) W(addr uint16, val uint8) {
+	// Only works with MBC3 now
+	if addr >= 0x2000 && addr < 0x4000 {
+		newBank := uint(val)
+		if newBank == 0 {
+			newBank = 1
+		}
+		if newBank/uint(len(r.banks)) != 0 {
+			log.Printf("!!! Attempt to switch to bank beyond number in cart %04Xh\n", val)
+		}
+		r.currentBank = newBank % uint(len(r.banks))
+		return
+	}
 	log.Printf("Attempt to write to ROM at %04Xh with val %02Xh ignored", addr, val)
 }
 
