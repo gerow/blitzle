@@ -167,7 +167,17 @@ func (r *ROM) R(addr uint16) uint8 {
 func (r *ROM) W(addr uint16, val uint8) {
 	// Only works with MBC3 now
 	if addr >= 0x0000 && addr < 0x2000 {
+		if r.ramEnabled {
+			log.Printf("Cartridge RAM was enabled\n")
+		} else {
+			log.Printf("Cartridge RAM was disabled\n")
+		}
 		r.ramEnabled = val&0x0a == 0x0a
+		if r.ramEnabled {
+			log.Printf("Cartridge RAM now enabled\n")
+		} else {
+			log.Printf("Cartridge RAM now disabled\n")
+		}
 		return
 	}
 	if addr >= 0x2000 && addr < 0x4000 {

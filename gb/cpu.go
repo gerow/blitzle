@@ -235,6 +235,11 @@ func (c *CPU) State(sys *Sys) string {
 		o.WriteString(fmt.Sprintf("%s%04Xh: %02Xh\n", ipChar, addr, sys.RbLog(addr, false)))
 	}
 
+	o.WriteString(fmt.Sprintf("Last 10 items on stack (most recent first):\n"))
+	for addr := c.sp; addr < c.sp+20; addr += 2 {
+		o.WriteString(fmt.Sprintf("%04Xh: %04Xh\n", addr, sys.RsLog(addr, false)))
+	}
+
 	return o.String()
 }
 

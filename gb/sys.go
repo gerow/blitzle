@@ -106,8 +106,8 @@ func (s *Sys) Step() {
 	s.video.Step(s)
 	if s.cpuWait == 0 {
 		s.cpuWait = s.cpu.Step(s)
-		fmt.Print(s.cpu.State(s))
-		fmt.Printf(s.timer.State())
+		//fmt.Print(s.cpu.State(s))
+		//fmt.Printf(s.timer.State())
 		//fmt.Print(s.video.State(s))
 	} else {
 		s.cpuWait -= 4
@@ -137,14 +137,14 @@ func (s *Sys) getHandler(addr uint16) BusDev {
 func (s *Sys) RbLog(addr uint16, l bool) uint8 {
 	rv := s.getHandler(addr).R(addr)
 	if l {
-		log.Printf("R1 (%04Xh) => %02Xh\n", addr, rv)
+		//log.Printf("R1 (%04Xh) => %02Xh\n", addr, rv)
 	}
 	return rv
 }
 
 func (s *Sys) WbLog(addr uint16, val uint8, l bool) {
 	if l {
-		log.Printf("W1 %02Xh => (%04Xh)\n", val, addr)
+		//log.Printf("W1 %02Xh => (%04Xh)\n", val, addr)
 	}
 	s.getHandler(addr).W(addr, val)
 }
@@ -152,14 +152,14 @@ func (s *Sys) WbLog(addr uint16, val uint8, l bool) {
 func (s *Sys) RsLog(addr uint16, l bool) uint16 {
 	rv := uint16(s.RbLog(addr, false)) | uint16(s.RbLog(addr+1, false))<<8
 	if l {
-		log.Printf("R2 (%04Xh) => %04Xh\n", addr, rv)
+		//log.Printf("R2 (%04Xh) => %04Xh\n", addr, rv)
 	}
 	return rv
 }
 
 func (s *Sys) WsLog(addr uint16, val uint16, l bool) {
 	if l {
-		log.Printf("W2 %04Xh => (%04Xh)\n", val, addr)
+		//log.Printf("W2 %04Xh => (%04Xh)\n", val, addr)
 	}
 	s.WbLog(addr, uint8(val), false)
 	s.WbLog(addr+1, uint8(val>>8), false)

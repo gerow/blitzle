@@ -307,7 +307,7 @@ func tilePix(chrTile []byte, x uint, y uint) Pixel {
 func (v *Video) drawLine(sys *Sys) {
 	lcdc := v.lcdc.val()
 	bgMap := v.bgMap(sys, lcdc&0x08 != 0)
-	fmt.Printf("bgMap: %v\n", bgMap)
+	//fmt.Printf("bgMap: %v\n", bgMap)
 	//fmt.Printf("lcdc is %02Xh\n", lcdc)
 	startAt8800 := lcdc&0x10 == 0
 	chrTiles := v.chrTiles(sys, startAt8800)
