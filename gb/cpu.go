@@ -990,24 +990,24 @@ func CBR(op CBROp, br ByteRegister) OpFunc {
 		ifc := cpu.fc
 		switch op {
 		case RLC:
-			/* Left rotate through carry */
+			/* Left rotate */
 			cpu.fc = 0x80&v != 0
 			v <<= 1
 			v |= oldV >> 7
 		case RRC:
-			/* Right rotate through carry */
+			/* Right rotate */
 			cpu.fc = 0x01&v != 0
 			v >>= 1
 			v |= oldV << 7
 		case RL:
-			/* Left rotate */
+			/* Left rotate through carry */
 			cpu.fc = 0x80&v != 0
 			v <<= 1
 			if ifc {
 				v |= 0x01
 			}
 		case RR:
-			/* Right rotate */
+			/* Right rotate through carry */
 			cpu.fc = 0x01&v != 0
 			v >>= 1
 			if ifc {
