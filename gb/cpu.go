@@ -361,8 +361,8 @@ func (c *CPU) wrs(sr ShortRegister, v uint16) {
 }
 
 func (c *CPU) Push(sys *Sys, v uint16) {
-	sys.Ws(c.sp-2, v)
 	c.sp -= 2
+	sys.Ws(c.sp, v)
 }
 
 func (c *CPU) Pop(sys *Sys) uint16 {
