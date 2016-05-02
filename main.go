@@ -9,6 +9,7 @@ import (
 	"image/color"
 	"log"
 	"os"
+	"runtime"
 	"unsafe"
 )
 
@@ -52,6 +53,7 @@ func Swap(pixels [gb.LCDSizeX * gb.LCDSizeY]gb.Pixel) {
 }
 
 func main() {
+	runtime.LockOSThread()
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage: %s ROM_FILE\n", os.Args[0])
 		flag.PrintDefaults()
