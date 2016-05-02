@@ -1,7 +1,7 @@
 package gb
 
 import (
-	"fmt"
+	//"fmt"
 	"log"
 )
 
@@ -22,7 +22,7 @@ type Sys struct {
 	devs []BusDev
 	Stop bool
 
-	wall    int
+	Wall    int
 	cpuWait int
 }
 
@@ -112,7 +112,7 @@ func (s *Sys) Step() {
 	} else {
 		s.cpuWait -= 4
 	}
-	s.wall += 4
+	s.Wall += 4
 }
 
 /*
@@ -121,7 +121,7 @@ func (s *Sys) Step() {
  */
 func (s *Sys) FreqStep(desiredFreq uint) bool {
 	divAmt := clkFreq / desiredFreq
-	return uint(s.wall)%divAmt == 0
+	return uint(s.Wall)%divAmt == 0
 }
 
 func (s *Sys) getHandler(addr uint16) BusDev {
@@ -224,7 +224,7 @@ func interruptName(intr Interrupt) string {
 }
 
 func (s *Sys) RaiseInterrupt(inter Interrupt) {
-	fmt.Printf("Interrupt %s raised!\n", interruptName(inter))
+	//fmt.Printf("Interrupt %s raised!\n", interruptName(inter))
 	s.ifReg.set(s.ifReg.val() | (1 << inter))
 }
 
@@ -235,10 +235,10 @@ func (s *Sys) HandleInterrupt() *Interrupt {
 		// The interrupts are in priority order, so just pick the first one
 		if firingInterrupts&(1<<i) != 0 {
 			// Reset the bit and return the val
-			fmt.Printf("Interrupt %s getting handled!\n", interruptName(i))
-			fmt.Printf("ifreg was %02Xh\n", s.ifReg.val())
+			//fmt.Printf("Interrupt %s getting handled!\n", interruptName(i))
+			//fmt.Printf("ifreg was %02Xh\n", s.ifReg.val())
 			s.ifReg.set(s.ifReg.val() & ^(1 << i))
-			fmt.Printf("now is %02Xh\n", s.ifReg.val())
+			//fmt.Printf("now is %02Xh\n", s.ifReg.val())
 			return &i
 		}
 	}

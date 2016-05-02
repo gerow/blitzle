@@ -269,23 +269,31 @@ func (v *Video) oamBlocks() *[nOAMblocks]OAMblock {
 	return &out
 }
 
-const bgMapWidth uint = 32
-const bgMapHeight uint = 32
-const tileWidth uint = 8
-const tileHeight uint = 8
+const (
+	bgMapWidth          uint = 32
+	bgMapHeight         uint = 32
+	tileWidth           uint = 8
+	tileHeight          uint = 8
+	bgMapSize           uint = 0x400
+	bgMap1AddrInRAM     uint = 0x9800 - 0x8000
+	bgMap2AddrInRAM     uint = 0x9c00 - 0x8000
+	chrTilesBGMap1InRAM uint = 0x8000 - 0x8000
+	chrTilesBGMap2InRAM uint = 0x8800 - 0x8000
+	chrTilesSize        uint = 256 * 16
+)
 
 func (v *Video) bgMap(sys *Sys, dd2 bool) []byte {
 	if dd2 {
-		return sys.ReadBytes(0x9c00, 0x400)
+		return v.videoRAM.data[bgMap2AddrInRAM : bgMap2AddrInRAM+bgMapSize]
 	}
-	return sys.ReadBytes(0x9800, 0x400)
+	return v.videoRAM.data[bgMap1AddrInRAM : bgMap1AddrInRAM+bgMapSize]
 }
 
-func (v *Video) chrTiles(sys *Sys, startAt8800 bool) []byte {
-	if startAt8800 {
-		return sys.ReadBytes(0x8800, 256*16)
+func (v *Video) chrTiles(sys *Sys, map2 bool) []byte {
+	if map2 {
+		return v.videoRAM.data[chrTilesBGMap2InRAM : chrTilesBGMap2InRAM+chrTilesSize]
 	}
-	return sys.ReadBytes(0x8000, 256*16)
+	return v.videoRAM.data[chrTilesBGMap1InRAM : chrTilesBGMap1InRAM+chrTilesSize]
 }
 
 func tilePix(chrTile []byte, x uint, y uint) Pixel {

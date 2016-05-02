@@ -21,12 +21,14 @@ var colorMap map[gb.Pixel]*color.RGBA = map[gb.Pixel]*color.RGBA{
 }
 var surface *sdl.Surface
 var window *sdl.Window
+var sys *gb.Sys
 
 func getColor(p gb.Pixel) *color.RGBA {
 	return colorMap[p]
 }
 
 func Swap(pixels [gb.LCDSizeX * gb.LCDSizeY]gb.Pixel) {
+	fmt.Printf("wall: %d\n", sys.Wall)
 	out := image.NewRGBA(
 		image.Rectangle{
 			image.Point{0, 0},
@@ -67,7 +69,7 @@ func main() {
 	}
 	fmt.Print(r.Info())
 
-	sys := gb.NewSys(r, Swap)
+	sys = gb.NewSys(r, Swap)
 
 	sdl.Init(sdl.INIT_EVERYTHING)
 	window, err = sdl.CreateWindow("Blitzle", sdl.WINDOWPOS_UNDEFINED, sdl.WINDOWPOS_UNDEFINED,
