@@ -439,7 +439,7 @@ func INCDECB(br ByteRegister, mod int) OpFunc {
 		if mod == 1 {
 			cpu.fh = halfCarry(v, 1)
 		} else {
-			cpu.fh = halfBorrow(v, 1)
+			cpu.fh = !halfBorrow(v, 1)
 		}
 
 		cpu.ip++
