@@ -551,7 +551,7 @@ func LDBInd(destReg ByteRegister, srcAddrReg ShortRegister, mod int) OpFunc {
 		addr := cpu.rrs(srcAddrReg)
 		cpu.wrb(destReg, sys.Rb(addr))
 		if mod != 0 {
-			cpu.wrs(srcAddrReg, addr+1)
+			cpu.wrs(srcAddrReg, uint16(int(addr)+mod))
 		}
 
 		cpu.ip++
