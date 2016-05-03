@@ -50,7 +50,6 @@ func (f *Frontend) Swap(pixels [gb.LCDSizeX * gb.LCDSizeY]gb.Pixel) {
 	for x := uint(0); x < gb.LCDSizeX; x++ {
 		for y := uint(0); y < gb.LCDSizeY; y++ {
 			out[y*gb.LCDSizeX+x] = getColor(pixels[y*gb.LCDSizeX+x])
-			(*[gb.LCDSizeX * gb.LCDSizeY]uint32)(texPixels)[y*uint(pitch/4)+x] = getColor(pixels[y*gb.LCDSizeX+x])
 		}
 	}
 	f.texture.Unlock()
