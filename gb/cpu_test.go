@@ -353,20 +353,102 @@ func TestADD(t *testing.T) {
 	checkFlags(t, s, 0xb0)
 }
 
-func TestDAAAddNoCarries(t *testing.T) {
+func TestDAA(t *testing.T) {
+	// Add, no carry
 	s := S([]byte{
-		0x3e, 0x12, // LD A,$12
-		0x06, 0x34, // LD B,$34
 		0x80, // ADD A,B
 		0x27, // DAA
 	})
-	checkStep(t, s, 8)
-	checkStep(t, s, 8)
+	s.cpu.a = 0x12
+	s.cpu.b = 0x34
+	s.cpu.setFlags(^uint8(0x00))
 	checkStep(t, s, 4)
 	checkStep(t, s, 4)
-
 	if s.cpu.a != 0x46 {
 		t.Errorf("Expected A=46h, got %02Xh\n", s.cpu.a)
 	}
 	checkFlags(t, s, 0x00)
+
+	// Add, ones carry, no true half carry
+	s.cpu.ip = 0x100
+
+	s.cpu.a = 0x12
+	s.cpu.b = 0x39
+	s.cpu.setFlags(^uint8(0x00))
+	checkStep(t, s, 4)
+	checkStep(t, s, 4)
+	if s.cpu.a != 0x51 {
+		t.Errorf("Expected A=51h, got %02Xh\n", s.cpu.a)
+	}
+	checkFlags(t, s, 0x00)
+
+	// Add, true half carry
+	s.cpu.ip = 0x100
+
+	s.cpu.a = 0x19
+	s.cpu.b = 0x39
+	s.cpu.setFlags(^uint8(0x00))
+	checkStep(t, s, 4)
+	checkFlags(t, s, 0x20)
+	checkStep(t, s, 4)
+	if s.cpu.a != 0x58 {
+		t.Errorf("Expected A=58h, got %02Xh\n", s.cpu.a)
+	}
+	checkFlags(t, s, 0x00)
+
+	// Add, tens carry, no true carry
+	s.cpu.ip = 0x100
+
+	s.cpu.a = 0x50
+	s.cpu.b = 0x60
+	s.cpu.setFlags(^uint8(0x10))
+	checkStep(t, s, 4)
+	checkFlags(t, s, 0x00)
+	checkStep(t, s, 4)
+	if s.cpu.a != 0x10 {
+		t.Errorf("Expected A=10h, got %02Xh\n", s.cpu.a)
+	}
+	checkFlags(t, s, 0x10)
+
+	// Add, tens carry, true carry
+	s.cpu.ip = 0x100
+
+	s.cpu.a = 0x90
+	s.cpu.b = 0x90
+	s.cpu.setFlags(^uint8(0x10))
+	checkStep(t, s, 4)
+	checkFlags(t, s, 0x10)
+	checkStep(t, s, 4)
+	if s.cpu.a != 0x80 {
+		t.Errorf("Expected A=80h, got %02Xh\n", s.cpu.a)
+	}
+	checkFlags(t, s, 0x10)
+
+	// Everything carries
+	s.cpu.ip = 0x100
+
+	s.cpu.a = 0x99
+	s.cpu.b = 0x99
+	s.cpu.setFlags(^uint8(0x10))
+	checkStep(t, s, 4)
+	checkFlags(t, s, 0x30)
+	checkStep(t, s, 4)
+	if s.cpu.a != 0x98 {
+		t.Errorf("Expected A=98h, got %02Xh\n", s.cpu.a)
+	}
+	checkFlags(t, s, 0x10)
+
+	// Carry to zero
+	s.cpu.ip = 0x100
+
+	s.cpu.a = 0x99
+	s.cpu.b = 0x01
+	s.cpu.setFlags(^uint8(0x40))
+	checkStep(t, s, 4)
+	checkFlags(t, s, 0x00)
+	checkStep(t, s, 4)
+	if s.cpu.a != 0x00 {
+		t.Errorf("Expected A=00h, got %02Xh\n", s.cpu.a)
+	}
+	checkFlags(t, s, 0x90)
 }
