@@ -65,7 +65,7 @@ func halfCarryWithC(a uint8, b uint8, c bool) bool {
 		carryMod = 0
 	}
 	a16 := uint16(a) + carryMod
-	return (a16&0xf+uint16(b)&0xf)&0x10 != 0
+	return (a16&0xf + uint16(b)&0xf) > 0xf
 }
 
 func carry(a uint8, b uint8) bool {
@@ -80,7 +80,11 @@ func carryWithC(a uint8, b uint8, c bool) bool {
 		carryMod = 0
 	}
 	a16 := uint16(a) + carryMod
-	return uint16(a16)+uint16(b)&0x100 != 0
+	return uint16(a16)+uint16(b) > 0xff
+}
+
+func negate(a uint8) uint8 {
+	return ^a + 1
 }
 
 func halfBorrow(a uint8, b uint8) bool {
@@ -597,18 +601,36 @@ func RRA(cpu *CPU, sys *Sys) int {
 /* Decimal adjust A */
 func DAA(cpu *CPU, sys *Sys) int {
 	a := cpu.rrb(A)
-	carry := a > 99
-	tens := a / 10
-	a -= tens * 10
-	ones := a
 
-	/* I don't actually know how the CPU handles bad cases */
-	newA := tens<<4 | ones
-	cpu.wrb(A, newA)
+	tens := a >> 4
+	ones := a & 0x0f
 
-	cpu.fz = newA == 0
+	if cpu.fn {
+		fmt.Printf("No DAA on sub yet\n")
+	} else {
+		if cpu.fh {
+			tens -= 1
+			ones += 16
+		}
+		if ones > 9 {
+			tens += 1
+			ones -= 10
+		}
+		if cpu.fc {
+			tens += 16
+		}
+		if tens > 9 {
+			tens -= 10
+			cpu.fc = true
+		} else {
+			cpu.fc = false
+		}
+	}
+	a = (tens&0xf)<<4 | ones&0xf
+	cpu.wrb(A, a)
+
+	cpu.fz = a == 0
 	cpu.fh = false
-	cpu.fc = carry
 
 	cpu.ip++
 	return 4

@@ -69,6 +69,12 @@ func checkBus(t *testing.T, s *Sys, addr uint16, expected uint8) {
 	}
 }
 
+func checkFlags(t *testing.T, s *Sys, expected uint8) {
+	if v := s.cpu.flags(); v != expected {
+		t.Errorf("Expected flags=%02Xh, got %02Xh\n", expected, v)
+	}
+}
+
 func TestNOP(t *testing.T) {
 	s := S([]byte{
 		0x00, // NOP
@@ -285,4 +291,82 @@ func TestJPHL(t *testing.T) {
 	s.cpu.l = 0xcd
 	checkStep(t, s, 4)
 	checkIP(t, s, 0xabcd)
+}
+
+func TestADD(t *testing.T) {
+	s := S([]byte{
+		0x80, // ADD A,B
+	})
+
+	// No carry
+	s.cpu.setFlags(^uint8(0x00))
+	s.cpu.a = 1
+	s.cpu.b = 1
+	checkStep(t, s, 4)
+	if s.cpu.a != 0x02 {
+		t.Errorf("Expected A=02h, got %02Xh\n", s.cpu.a)
+	}
+	checkFlags(t, s, 0x00)
+
+	// Half carry
+	s.cpu.ip = 0x100
+	s.cpu.setFlags(^uint8(0x20))
+	s.cpu.a = 0x0f
+	s.cpu.b = 0x0f
+	checkStep(t, s, 4)
+	if s.cpu.a != 0x1e {
+		t.Errorf("Expected A=1Eh, got %02Xh\n", s.cpu.a)
+	}
+	checkFlags(t, s, 0x20)
+
+	// Full carry, no half
+	s.cpu.ip = 0x100
+	s.cpu.setFlags(^uint8(0x10))
+	s.cpu.a = 0xf0
+	s.cpu.b = 0xf0
+	checkStep(t, s, 4)
+	if s.cpu.a != 0xe0 {
+		t.Errorf("Expected A=E0h, got %02Xh\n", s.cpu.a)
+	}
+	checkFlags(t, s, 0x10)
+
+	// Full and half carry
+	s.cpu.ip = 0x100
+	s.cpu.setFlags(^uint8(0x30))
+	s.cpu.a = 0xff
+	s.cpu.b = 0xff
+	checkStep(t, s, 4)
+	if s.cpu.a != 0xfe {
+		t.Errorf("Expected A=FEh, got %02Xh\n", s.cpu.a)
+	}
+	checkFlags(t, s, 0x30)
+
+	// All carry to zero
+	s.cpu.ip = 0x100
+	s.cpu.setFlags(^uint8(0xb0))
+	s.cpu.a = 0xff
+	s.cpu.b = 0x01
+	checkStep(t, s, 4)
+	if s.cpu.a != 0x00 {
+		t.Errorf("Expected A=00h, got %02Xh\n", s.cpu.a)
+	}
+	checkFlags(t, s, 0xb0)
+}
+
+func TestDAAAddNoCarries(t *testing.T) {
+	s := S([]byte{
+		0x3e, 0x12, // LD A,$12
+		0x06, 0x34, // LD B,$34
+		0x80, // ADD A,B
+		0x27, // DAA
+	})
+	checkStep(t, s, 8)
+	checkStep(t, s, 8)
+	checkStep(t, s, 4)
+	checkStep(t, s, 4)
+
+	if s.cpu.a != 0x46 {
+		t.Errorf("Expected A=46h, got %02Xh\n", s.cpu.a)
+	}
+	checkFlags(t, s, 0x00)
 }

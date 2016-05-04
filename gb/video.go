@@ -191,7 +191,7 @@ func (v *Video) Step(sys *Sys) {
 		// We're done drawing lines, so send send the output up to
 		// gl so it can munge it into a gl texture
 		v.swap(v.buf)
-		fmt.Printf("wall: %d\n", sys.Wall)
+		//fmt.Printf("wall: %d\n", sys.Wall)
 	}
 	// Interrupt for mode 2 OAM (which occurs at the beginning of a new line)
 	if v.currentCycle%hCycles == 0 && stat&(1<<5) != 0 && v.currentCycle < vblankCycles {
