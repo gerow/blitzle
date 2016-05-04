@@ -14,11 +14,9 @@ import (
 )
 
 func main() {
-	/*
-		go func() {
-			log.Println(http.ListenAndServe("localhost:6060", nil))
-		}()
-	*/
+	//	go func() {
+	//		log.Println(http.ListenAndServe("localhost:6060", nil))
+	//	}()
 	// XXX(gerow): Hack for issues in go-sdl2
 	runtime.LockOSThread()
 	flag.Usage = func() {

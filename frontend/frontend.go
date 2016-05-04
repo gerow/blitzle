@@ -22,7 +22,7 @@ var colorMap map[gb.Pixel]uint32 = map[gb.Pixel]uint32{
 func NewFrontend() (*Frontend, error) {
 	window, err := sdl.CreateWindow(
 		"Blitzle", sdl.WINDOWPOS_UNDEFINED, sdl.WINDOWPOS_UNDEFINED,
-		int(gb.LCDSizeX), int(gb.LCDSizeY), sdl.WINDOW_SHOWN)
+		800, 600, sdl.WINDOW_SHOWN)
 	if err != nil {
 		return nil, err
 	}
