@@ -42,5 +42,7 @@ func main() {
 		panic(err)
 	}
 	sys := gb.NewSys(r, fe.Swap)
+	bs := gb.ButtonState{false, false, false, false, true, false, false, true}
+	sys.UpdateButtons(bs)
 	sys.Run()
 }
