@@ -15,9 +15,10 @@ type Sys struct {
 	video     *Video
 	cpu       *CPU
 	/* Interrupt controller registers */
-	ieReg *MemRegister
-	ifReg *MemRegister
-	timer *Timer
+	ieReg  *MemRegister
+	ifReg  *MemRegister
+	timer  *Timer
+	joypad *Joypad
 
 	devs []BusDev
 	Stop bool
@@ -60,6 +61,7 @@ func NewSys(rom *ROM, swap SwapFunc) *Sys {
 	ieReg := NewMemRegister(0xffff)
 	ifReg := NewMemRegister(0xff0f)
 	timer := NewTimer()
+	joypad := &Joypad{}
 	bh2 := NewBusHole(0xfea0, 0xff7f)
 	devs := []BusDev{
 		rom,
@@ -69,6 +71,7 @@ func NewSys(rom *ROM, swap SwapFunc) *Sys {
 		ieReg,
 		ifReg,
 		timer,
+		joypad,
 		bh2}
 
 	s := &Sys{
@@ -80,6 +83,7 @@ func NewSys(rom *ROM, swap SwapFunc) *Sys {
 		ieReg,
 		ifReg,
 		timer,
+		joypad,
 		devs,
 		false,
 		0,
@@ -245,4 +249,8 @@ func (s *Sys) HandleInterrupt() *Interrupt {
 
 	// If there aren't any interrupts to handle just return nil
 	return nil
+}
+
+func (s *Sys) UpdateButtons(state ButtonState) {
+	s.joypad.UpdateButtons(s, state)
 }
