@@ -30,37 +30,37 @@ func (j *Joypad) UpdateButtons(sys *Sys, state ButtonState) {
 func (j *Joypad) R(_ uint16) uint8 {
 	v := j.val | 0xcf
 
-	if ^v&0x30 != 0 {
+	if ^v&0x30 == 0x30 {
 		fmt.Printf("!!! both directions and buttons selected\n")
 	}
 
 	if ^v&0x10 != 0 {
 		// Down/Up/Left/Right
 		if j.state.Down {
-			v &= ^uint8(0x80)
+			v &= ^uint8(0x08)
 		}
 		if j.state.Up {
-			v &= ^uint8(0x40)
+			v &= ^uint8(0x04)
 		}
 		if j.state.Left {
-			v &= ^uint8(0x20)
+			v &= ^uint8(0x02)
 		}
 		if j.state.Right {
-			v &= ^uint8(0x10)
+			v &= ^uint8(0x01)
 		}
 	} else if ^v&0x20 != 0 {
 		// Start/Select/B/A
 		if j.state.Start {
-			v &= ^uint8(0x80)
+			v &= ^uint8(0x08)
 		}
 		if j.state.SelectButton {
-			v &= ^uint8(0x40)
+			v &= ^uint8(0x04)
 		}
 		if j.state.B {
-			v &= ^uint8(0x20)
+			v &= ^uint8(0x02)
 		}
 		if j.state.A {
-			v &= ^uint8(0x10)
+			v &= ^uint8(0x01)
 		}
 	} else {
 		fmt.Printf("!!! neither buttons nor directions selected\n")
@@ -70,7 +70,8 @@ func (j *Joypad) R(_ uint16) uint8 {
 }
 
 func (j *Joypad) W(_ uint16, v uint8) {
-	j.val = v & 0x03
+	//fmt.Printf("joypad W=%02Xh\n", v)
+	j.val = v & 0x30
 }
 
 func (j *Joypad) Asserts(addr uint16) bool {
