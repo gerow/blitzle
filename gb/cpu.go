@@ -98,11 +98,8 @@ func halfBorrowWithC(a uint8, b uint8, c bool) bool {
 	} else {
 		carryMod = 0
 	}
-	b16 := uint16(a) + carryMod
-	if b16&0xf > uint16(a)&0xf {
-		return true
-	}
-	return false
+	b16 := uint16(b) + carryMod
+	return b16&0xf > uint16(a)&0xf
 }
 
 func borrow(a uint8, b uint8) bool {
@@ -116,7 +113,7 @@ func borrowWithC(a uint8, b uint8, c bool) bool {
 	} else {
 		carryMod = 0
 	}
-	b16 := uint16(a) + carryMod
+	b16 := uint16(b) + carryMod
 	if b16 > uint16(a) {
 		return true
 	}
@@ -602,11 +599,29 @@ func RRA(cpu *CPU, sys *Sys) int {
 func DAA(cpu *CPU, sys *Sys) int {
 	a := cpu.rrb(A)
 
-	tens := a >> 4
-	ones := a & 0x0f
+	tens := int16(a >> 4)
+	ones := int16(a & 0x0f)
 
 	if cpu.fn {
-		fmt.Printf("No DAA on sub yet\n")
+		// Implies half-borrow
+		if !cpu.fh {
+			tens += 1
+			ones -= 16
+		}
+		if ones < 0 {
+			tens -= 1
+			ones += 10
+		}
+		// Implies borrow
+		if !cpu.fc {
+			tens -= 16
+		}
+		if tens < 0 {
+			tens += 10
+			cpu.fc = false
+		} else {
+			cpu.fc = true
+		}
 	} else {
 		if cpu.fh {
 			tens -= 1
@@ -626,7 +641,10 @@ func DAA(cpu *CPU, sys *Sys) int {
 			cpu.fc = false
 		}
 	}
-	a = (tens&0xf)<<4 | ones&0xf
+	if tens < 0 || ones < 0 {
+		panic("tens or ones for DAA less than zero (bad)")
+	}
+	a = uint8((uint(tens)&0xf)<<4 | uint(ones)&0xf)
 	cpu.wrb(A, a)
 
 	cpu.fz = a == 0

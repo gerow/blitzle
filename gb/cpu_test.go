@@ -353,10 +353,10 @@ func TestADD(t *testing.T) {
 	checkFlags(t, s, 0xb0)
 }
 
-func TestDAA(t *testing.T) {
+func TestDAAafterAdd(t *testing.T) {
 	// Add, no carry
 	s := S([]byte{
-		0x80, // ADD A,B
+		0x80, // ADD B
 		0x27, // DAA
 	})
 	s.cpu.a = 0x12
@@ -451,4 +451,61 @@ func TestDAA(t *testing.T) {
 		t.Errorf("Expected A=00h, got %02Xh\n", s.cpu.a)
 	}
 	checkFlags(t, s, 0x90)
+}
+
+func TestDAAafterSub(t *testing.T) {
+	s := S([]byte{
+		0x90, // SUB B
+		0x27, // DAA
+	})
+
+	// Half carry
+	s.cpu.a = 0x30
+	s.cpu.b = 0x04
+	checkStep(t, s, 4)
+	checkFlags(t, s, 0x50)
+	checkStep(t, s, 4)
+	checkFlags(t, s, 0x50)
+	if s.cpu.a != 0x26 {
+		t.Errorf("Expected A=26h, got %02Xh\n", s.cpu.a)
+	}
+
+	// Full carry
+	s.cpu.ip = 0x100
+
+	s.cpu.a = 0x30
+	s.cpu.b = 0x40
+	checkStep(t, s, 4)
+	checkFlags(t, s, 0x60)
+	checkStep(t, s, 4)
+	checkFlags(t, s, 0x40)
+	if s.cpu.a != 0x90 {
+		t.Errorf("Expected A=90h, got %02Xh\n", s.cpu.a)
+	}
+
+	// Full and half carry
+	s.cpu.ip = 0x100
+
+	s.cpu.a = 0x30
+	s.cpu.b = 0x41
+	checkStep(t, s, 4)
+	checkFlags(t, s, 0x40)
+	checkStep(t, s, 4)
+	checkFlags(t, s, 0x40)
+	if s.cpu.a != 0x89 {
+		t.Errorf("Expected A=89h, got %02Xh\n", s.cpu.a)
+	}
+
+	// Zero
+	s.cpu.ip = 0x100
+
+	s.cpu.a = 0x30
+	s.cpu.b = 0x30
+	checkStep(t, s, 4)
+	checkFlags(t, s, 0xf0)
+	checkStep(t, s, 4)
+	checkFlags(t, s, 0xd0)
+	if s.cpu.a != 0x00 {
+		t.Errorf("Expected A=00h, got %02Xh\n", s.cpu.a)
+	}
 }
