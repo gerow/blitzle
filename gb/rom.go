@@ -192,8 +192,12 @@ func (r *ROM) W(addr uint16, val uint8) {
 		return
 	}
 	if addr >= 0x4000 && addr < 0x6000 {
+		if len(r.ramBanks) == 0 {
+			log.Printf("!!! Attempt to write to RAM bank on ROM with no RAM")
+			return
+		}
 		newBank := uint(val)
-		if newBank/uint(len(r.ramBanks)) != 0 {
+		if newBank > uint(len(r.ramBanks))/ramBankSize {
 			log.Printf("!!! Attempt to switch to ROM bank beyond number in cart %04Xh\n", val)
 		}
 		r.currentRAMBank = newBank % uint(len(r.ramBanks))
