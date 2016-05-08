@@ -35,7 +35,7 @@ const mode3Length int = 172
 const mode0Length int = 204
 
 type Video struct {
-	swap     SwapFunc
+	swapper  VideoSwapper
 	videoRAM *RAM
 	oam      *RAM
 	devs     []BusDev
@@ -67,9 +67,13 @@ const oamSize uint16 = 40
 
 type SwapFunc func(pixels [LCDSizeX * LCDSizeY]Pixel)
 
-func NewVideo(swap SwapFunc) *Video {
+type VideoSwapper interface {
+	VideoSwap(pixels [LCDSizeX * LCDSizeY]Pixel)
+}
+
+func NewVideo(swapper VideoSwapper) *Video {
 	v := &Video{}
-	v.swap = swap
+	v.swapper = swapper
 	v.videoRAM = NewRAM(0x8000, 0x9fff)
 	v.oam = NewRAM(0xfe00, 0xfe9f)
 	v.lcdc = NewMemRegister(0xff40)
@@ -197,7 +201,7 @@ func (v *Video) Step(sys *Sys) {
 		} else {
 			sys.UpdateButtons(bs2)
 		}
-		v.swap(v.buf)
+		v.swapper.VideoSwap(v.buf)
 		fmt.Printf("wall: %d\n", sys.Wall)
 	}
 	// Interrupt for mode 2 OAM (which occurs at the beginning of a new line)

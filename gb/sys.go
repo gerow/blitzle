@@ -1,7 +1,7 @@
 package gb
 
 import (
-	//"fmt"
+	"fmt"
 	"log"
 )
 
@@ -19,6 +19,7 @@ type Sys struct {
 	ifReg  *MemRegister
 	timer  *Timer
 	joypad *Joypad
+	serial *Serial
 
 	devs []BusDev
 	Stop bool
@@ -53,15 +54,16 @@ func (b *BusHole) Asserts(addr uint16) bool {
 	return addr >= b.startAddr && addr <= b.endAddr
 }
 
-func NewSys(rom *ROM, swap SwapFunc) *Sys {
+func NewSys(rom *ROM, videoSwapper VideoSwapper, serialSwapper SerialSwapper) *Sys {
 	systemRAM := NewSystemRAM()
 	hiRAM := NewHiRAM()
-	video := NewVideo(swap)
+	video := NewVideo(videoSwapper)
 	cpu := NewCPU()
 	ieReg := NewMemRegister(0xffff)
 	ifReg := NewMemRegister(0xff0f)
 	timer := NewTimer()
 	joypad := &Joypad{}
+	serial := NewSerial(serialSwapper)
 	bh2 := NewBusHole(0xfea0, 0xff7f)
 	devs := []BusDev{
 		rom,
@@ -72,6 +74,7 @@ func NewSys(rom *ROM, swap SwapFunc) *Sys {
 		ifReg,
 		timer,
 		joypad,
+		serial,
 		bh2}
 
 	s := &Sys{
@@ -84,6 +87,7 @@ func NewSys(rom *ROM, swap SwapFunc) *Sys {
 		ifReg,
 		timer,
 		joypad,
+		serial,
 		devs,
 		false,
 		0,
@@ -105,8 +109,8 @@ func (s *Sys) Run() {
 
 // Step four clock cycls.
 func (s *Sys) Step() {
-	// Handle timer
 	s.timer.Step(s)
+	s.serial.Step(s)
 	s.video.Step(s)
 	if s.cpuWait == 0 {
 		s.cpuWait = s.cpu.Step(s)
@@ -228,7 +232,7 @@ func interruptName(intr Interrupt) string {
 }
 
 func (s *Sys) RaiseInterrupt(inter Interrupt) {
-	//fmt.Printf("Interrupt %s raised!\n", interruptName(inter))
+	fmt.Printf("Interrupt %s raised!\n", interruptName(inter))
 	s.ifReg.set(s.ifReg.val() | (1 << inter))
 }
 

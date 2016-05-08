@@ -39,7 +39,7 @@ func getColor(p gb.Pixel) uint32 {
 	return colorMap[p]
 }
 
-func (f *Frontend) Swap(pixels [gb.LCDSizeX * gb.LCDSizeY]gb.Pixel) {
+func (f *Frontend) VideoSwap(pixels [gb.LCDSizeX * gb.LCDSizeY]gb.Pixel) {
 	var texPixels unsafe.Pointer
 	var pitch int
 	err := f.texture.Lock(nil, &texPixels, &pitch)
