@@ -57,7 +57,11 @@ func (s *Serial) R(addr uint16) uint8 {
 	}
 }
 
-func (s *Serial) doSwap() {
+func (s *Serial) doSwap(concurrent bool) {
+	if !concurrent {
+		s.sb = s.swapper.SerialSwap(s.sb)
+		return
+	}
 	s.transferInProgress = true
 	oldSb := s.sb
 	go func() {
@@ -81,7 +85,9 @@ func (s *Serial) W(addr uint16, val uint8) {
 				fmt.Printf("!!! attempt to start new transfer when transfer already in progress\n")
 			} else {
 				fmt.Printf("Serial transfer started\n")
-				s.doSwap()
+				// XXX(gerow): This should probably be done
+				// concurrently.
+				s.doSwap(false)
 			}
 		}
 		// We just remember the lower two bits.
