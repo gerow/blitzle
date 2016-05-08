@@ -41,7 +41,12 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	sys := gb.NewSys(r, fe, &gb.NullSerialSwapper{})
+	serialOut, err := os.Create("serial.log")
+	if err != nil {
+		panic(err)
+	}
+	defer serialOut.Close()
+	sys := gb.NewSys(r, fe, &frontend.WriterSerialSwapper{serialOut})
 	bs := gb.ButtonState{false, false, false, false, true, false, false, true}
 	sys.UpdateButtons(bs)
 	sys.Run()

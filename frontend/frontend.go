@@ -3,6 +3,8 @@ package frontend
 import (
 	"github.com/gerow/blitzle/gb"
 	"github.com/veandco/go-sdl2/sdl"
+	"io"
+	"log"
 	"unsafe"
 )
 
@@ -55,4 +57,17 @@ func (f *Frontend) VideoSwap(pixels [gb.LCDSizeX * gb.LCDSizeY]gb.Pixel) {
 	f.texture.Unlock()
 	f.renderer.Copy(f.texture, nil, nil)
 	f.renderer.Present()
+}
+
+type WriterSerialSwapper struct {
+	Writer io.Writer
+}
+
+func (w *WriterSerialSwapper) SerialSwap(out uint8) uint8 {
+	realOut := []byte{byte(out)}
+	_, err := w.Writer.Write(realOut)
+	if err != nil {
+		log.Printf("Failed to swap serial: %v\n", err)
+	}
+	return 0xff
 }
