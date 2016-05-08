@@ -4,7 +4,7 @@ import "testing"
 
 func TestEverythingAsserts(t *testing.T) {
 	r := FakeROM([]byte{})
-	s := NewSys(r, nil)
+	s := NewSys(r, nil, nil)
 	for addr := uint(0); addr < 0x10000; addr++ {
 		if s.getHandler(uint16(addr)) == nil {
 			t.Errorf("no handler for %04Xh\n", addr)
@@ -14,7 +14,7 @@ func TestEverythingAsserts(t *testing.T) {
 
 func TestCorrectThingAsserts(t *testing.T) {
 	r := FakeROM([]byte{})
-	s := NewSys(r, nil)
+	s := NewSys(r, nil, nil)
 
 	for addr := uint(0); addr < 0x8000; addr++ {
 		if s.getHandler(uint16(addr)) != s.rom {

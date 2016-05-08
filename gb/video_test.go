@@ -2,8 +2,14 @@ package gb
 
 import "testing"
 
+type NullVideoSwapper struct {
+}
+
+func (n *NullVideoSwapper) VideoSwap(_ [LCDSizeX * LCDSizeY]Pixel) {
+}
+
 func TestCorrectVideoThingAsserts(t *testing.T) {
-	v := NewVideo(func(pixels [LCDSizeX * LCDSizeY]Pixel) {})
+	v := NewVideo(&NullVideoSwapper{})
 
 	for addr := uint16(0xfe00); addr < 0xfea0; addr++ {
 		if v.getHandler(addr) != v.oam {

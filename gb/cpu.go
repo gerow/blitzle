@@ -642,7 +642,8 @@ func DAA(cpu *CPU, sys *Sys) int {
 		}
 	}
 	if tens < 0 || ones < 0 {
-		panic("tens or ones for DAA less than zero (bad)")
+		// Illegal input, just push forward with a result
+		fmt.Printf("!!! tens or ones for DAA less than zero A: %02Xh flags: %02Xh\n", a, cpu.flags())
 	}
 	a = uint8((uint(tens)&0xf)<<4 | uint(ones)&0xf)
 	cpu.wrb(A, a)
