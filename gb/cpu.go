@@ -597,59 +597,38 @@ func RRA(cpu *CPU, sys *Sys) int {
 
 /* Decimal adjust A */
 func DAA(cpu *CPU, sys *Sys) int {
-	a := cpu.rrb(A)
+	// Aped from DParrott on nesdev because I can't figure out all
+	// the undefined cases :(
+	// <http://forums.nesdev.com/viewtopic.php?t=9088>
+	a := uint16(cpu.rrb(A))
 
-	tens := int16(a >> 4)
-	ones := int16(a & 0x0f)
+	if !cpu.fn {
 
-	if cpu.fn {
-		// Implies half-borrow
-		if !cpu.fh {
-			tens += 1
-			ones -= 16
+		if cpu.fh || (a&0xf) > 9 {
+			a += 0x06
 		}
-		if ones < 0 {
-			tens -= 1
-			ones += 10
-		}
-		// Implies borrow
-		if !cpu.fc {
-			tens -= 16
-		}
-		if tens < 0 {
-			tens += 10
-			cpu.fc = false
-		} else {
-			cpu.fc = true
+		if cpu.fc || a > 0x9f {
+			a += 0x60
 		}
 	} else {
 		if cpu.fh {
-			tens -= 1
-			ones += 16
-		}
-		if ones > 9 {
-			tens += 1
-			ones -= 10
+			a = (a - 6) & 0xff
 		}
 		if cpu.fc {
-			tens += 16
-		}
-		if tens > 9 {
-			tens -= 10
-			cpu.fc = true
-		} else {
-			cpu.fc = false
+			a -= 0x60
 		}
 	}
-	if tens < 0 || ones < 0 {
-		// Illegal input, just push forward with a result
-		fmt.Printf("!!! tens or ones for DAA less than zero A: %02Xh flags: %02Xh\n", a, cpu.flags())
-	}
-	a = uint8((uint(tens)&0xf)<<4 | uint(ones)&0xf)
-	cpu.wrb(A, a)
-
-	cpu.fz = a == 0
 	cpu.fh = false
+	cpu.fz = false
+	if (a & 0x100) == 0x100 {
+		cpu.fc = true
+	}
+	a &= 0xff
+	if a == 0 {
+		cpu.fz = true
+	}
+
+	cpu.wrb(A, uint8(a))
 
 	cpu.ip++
 	return 4
@@ -754,14 +733,14 @@ func ALU(op ALUOp, br ByteRegister) OpFunc {
 			cpu.a += val + carryMod
 		case SUB:
 			cpu.fn = true
-			cpu.fh = !halfBorrow(cpu.a, val)
-			cpu.fc = !borrow(cpu.a, val)
+			cpu.fh = halfBorrow(cpu.a, val)
+			cpu.fc = borrow(cpu.a, val)
 
 			cpu.a -= val
 		case SBC:
 			cpu.fn = true
-			cpu.fh = !halfBorrowWithC(cpu.a, val, cpu.fc)
-			cpu.fc = !borrowWithC(cpu.a, val, cpu.fc)
+			cpu.fh = halfBorrowWithC(cpu.a, val, cpu.fc)
+			cpu.fc = borrowWithC(cpu.a, val, cpu.fc)
 
 			cpu.a -= val + carryMod
 		case AND:
@@ -784,8 +763,8 @@ func ALU(op ALUOp, br ByteRegister) OpFunc {
 			cpu.a |= val
 		case CP:
 			cpu.fn = true
-			cpu.fh = !halfBorrowWithC(cpu.a, val, cpu.fc)
-			cpu.fc = !borrowWithC(cpu.a, val, cpu.fc)
+			cpu.fh = halfBorrow(cpu.a, val)
+			cpu.fc = borrow(cpu.a, val)
 
 			res = cpu.a - val
 		default:

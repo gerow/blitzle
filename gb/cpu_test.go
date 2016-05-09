@@ -509,3 +509,18 @@ func TestDAAafterSub(t *testing.T) {
 		t.Errorf("Expected A=00h, got %02Xh\n", s.cpu.a)
 	}
 }
+
+func TestCP(t *testing.T) {
+	s := S([]byte{
+		0xfe, 0x01, // CP 1
+	})
+	s.cpu.a = 0
+	checkStep(t, s, 8)
+	if s.cpu.ip != 0x102 {
+		t.Errorf("Expected CP d8 to be two bytes wide")
+	}
+	checkFlags(t, s, 0x70)
+	if s.cpu.a != 0x00 {
+		t.Errorf("Expected A=00h, got %02Xh\n", s.cpu.a)
+	}
+}
