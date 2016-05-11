@@ -401,8 +401,10 @@ func LDARegInd(br ShortRegister, mod int) OpFunc {
 	return func(cpu *CPU, sys *Sys) int {
 		addr := cpu.rrs(br)
 		sys.Wb(addr, cpu.rrb(A))
-		if mod != 0 {
-			cpu.wrs(br, uint16(int(addr)+mod))
+		if mod == 1 {
+			cpu.wrs(br, addr+1)
+		} else if mod == -1 {
+			cpu.wrs(br, addr-1)
 		}
 
 		cpu.ip++
