@@ -196,9 +196,9 @@ func (v *Video) Step(sys *Sys) {
 		// gl so it can munge it into a gl texture
 		bs1 := ButtonState{false, false, false, false, true, false, false, true}
 		bs2 := ButtonState{false, false, false, false, false, false, false, false}
-		if v.currentCycle%vblankCycles*2 == 0 {
+		if v.currentCycle%vblankCycles*30 == 0 {
 			sys.UpdateButtons(bs1)
-		} else {
+		} else if v.currentCycle%vblankCycles*30 == vblankCycles*15 {
 			sys.UpdateButtons(bs2)
 		}
 		v.swapper.VideoSwap(v.buf)

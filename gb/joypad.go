@@ -1,9 +1,5 @@
 package gb
 
-import (
-	"fmt"
-)
-
 type ButtonState struct {
 	Down         bool
 	Up           bool
@@ -21,19 +17,31 @@ type Joypad struct {
 }
 
 func (j *Joypad) UpdateButtons(sys *Sys, state ButtonState) {
-	if j.state != state {
+	initialVal := j.value()
+	j.state = state
+	newVal := j.value()
+	// Me trying to be too clever, we only raise in interrupt if one of the
+	// output bits goes from high to low. The xor will get us a 1
+	// for every bit that changed while the and makes sure only the
+	// ones that started high make it through.
+	//
+	// This could probably be reduced to a simpler form, but eh.
+	if (initialVal^newVal)&initialVal != 0 {
 		sys.RaiseInterrupt(JoypadInterrupt)
 	}
-	j.state = state
 }
 
-func (j *Joypad) R(_ uint16) uint8 {
-	v := j.val | 0xcf
-
-	if ^v&0x30 == 0x30 {
-		fmt.Printf("!!! both directions and buttons selected\n")
+func (j *Joypad) value() uint8 {
+	// Set initial input select values (only lower 4 bits should be set)
+	v := j.val
+	if v&^0x30 != 0 {
+		panic("non-output-setlect values in joypad set")
 	}
-
+	// Now set the high two bits since they're unused
+	v |= 0xc0
+	// And finally set the default values of the outputs to high,
+	// they will be pulled low if the corresponding button is set.
+	v |= 0x0f
 	if ^v&0x10 != 0 {
 		// Down/Up/Left/Right
 		if j.state.Down {
@@ -48,7 +56,10 @@ func (j *Joypad) R(_ uint16) uint8 {
 		if j.state.Right {
 			v &= ^uint8(0x01)
 		}
-	} else if ^v&0x20 != 0 {
+	}
+	// These aren't mutually exclusive, if both the input bits are low
+	// the output signifies that one or both of the buttons is pressed.
+	if ^v&0x20 != 0 {
 		// Start/Select/B/A
 		if j.state.Start {
 			v &= ^uint8(0x08)
@@ -62,11 +73,12 @@ func (j *Joypad) R(_ uint16) uint8 {
 		if j.state.A {
 			v &= ^uint8(0x01)
 		}
-	} else {
-		fmt.Printf("!!! neither buttons nor directions selected\n")
-		return v | 0x0f
 	}
 	return v
+}
+
+func (j *Joypad) R(_ uint16) uint8 {
+	return j.value()
 }
 
 func (j *Joypad) W(_ uint16, v uint8) {
