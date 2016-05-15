@@ -463,9 +463,9 @@ func TestDAAafterSub(t *testing.T) {
 	s.cpu.a = 0x30
 	s.cpu.b = 0x04
 	checkStep(t, s, 4)
-	checkFlags(t, s, 0x50)
+	checkFlags(t, s, 0x60)
 	checkStep(t, s, 4)
-	checkFlags(t, s, 0x50)
+	checkFlags(t, s, 0x40)
 	if s.cpu.a != 0x26 {
 		t.Errorf("Expected A=26h, got %02Xh\n", s.cpu.a)
 	}
@@ -476,9 +476,9 @@ func TestDAAafterSub(t *testing.T) {
 	s.cpu.a = 0x30
 	s.cpu.b = 0x40
 	checkStep(t, s, 4)
-	checkFlags(t, s, 0x60)
+	checkFlags(t, s, 0x50)
 	checkStep(t, s, 4)
-	checkFlags(t, s, 0x40)
+	checkFlags(t, s, 0x50)
 	if s.cpu.a != 0x90 {
 		t.Errorf("Expected A=90h, got %02Xh\n", s.cpu.a)
 	}
@@ -489,9 +489,9 @@ func TestDAAafterSub(t *testing.T) {
 	s.cpu.a = 0x30
 	s.cpu.b = 0x41
 	checkStep(t, s, 4)
-	checkFlags(t, s, 0x40)
+	checkFlags(t, s, 0x70)
 	checkStep(t, s, 4)
-	checkFlags(t, s, 0x40)
+	checkFlags(t, s, 0x50)
 	if s.cpu.a != 0x89 {
 		t.Errorf("Expected A=89h, got %02Xh\n", s.cpu.a)
 	}
@@ -502,9 +502,9 @@ func TestDAAafterSub(t *testing.T) {
 	s.cpu.a = 0x30
 	s.cpu.b = 0x30
 	checkStep(t, s, 4)
-	checkFlags(t, s, 0xf0)
+	checkFlags(t, s, 0xc0)
 	checkStep(t, s, 4)
-	checkFlags(t, s, 0xd0)
+	checkFlags(t, s, 0xc0)
 	if s.cpu.a != 0x00 {
 		t.Errorf("Expected A=00h, got %02Xh\n", s.cpu.a)
 	}
