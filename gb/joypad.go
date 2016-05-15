@@ -32,7 +32,7 @@ func (j *Joypad) UpdateButtons(sys *Sys, state ButtonState) {
 }
 
 func (j *Joypad) value() uint8 {
-	// Set initial input select values (only lower 4 bits should be set)
+	// Set initial input select values (only bits 4,5 should be set/reset)
 	v := j.val
 	if v&^0x30 != 0 {
 		panic("non-output-setlect values in joypad set")
