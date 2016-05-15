@@ -16,6 +16,10 @@ type Joypad struct {
 	state ButtonState
 }
 
+func NewJoypad() *Joypad {
+	return &Joypad{0x30, ButtonState{}}
+}
+
 func (j *Joypad) UpdateButtons(sys *Sys, state ButtonState) {
 	initialVal := j.value()
 	j.state = state
