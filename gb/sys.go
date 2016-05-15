@@ -62,7 +62,7 @@ func NewSys(rom *ROM, videoSwapper VideoSwapper, serialSwapper SerialSwapper) *S
 	ieReg := NewMemRegister(0xffff)
 	ifReg := NewMemRegister(0xff0f)
 	timer := NewTimer()
-	joypad := &Joypad{}
+	joypad := NewJoypad()
 	serial := NewSerial(serialSwapper)
 	bh2 := NewBusHole(0xfea0, 0xff7f)
 	devs := []BusDev{
