@@ -334,9 +334,11 @@ func tilePix(chrTile []byte, x uint, y uint) Pixel {
 // Draw the current line to the buffer. We do this at the beginning of mode 3
 // since that's when the gameboy no longer expects to be able to write to the
 // OAM or video RAM (although we let it do so anyway).
+
 func (v *Video) drawLine(sys *Sys) {
 	lcdc := v.lcdc.val()
 	bgMap := v.bgMap(sys, lcdc&0x08 != 0)
+	winMap := v.bgMap(sys, lcdc&0x40 != 0)
 	//fmt.Printf("bgMap: %v\n", bgMap)
 	//fmt.Printf("lcdc is %02Xh\n", lcdc)
 	startAt8800 := lcdc&0x10 == 0
@@ -344,39 +346,68 @@ func (v *Video) drawLine(sys *Sys) {
 
 	//v.DumpTiles(sys)
 	ly := uint(v.ly.val())
-	y := uint(v.scy.val()) + ly
-	tileRow := (uint(y) / tileHeight) % bgMapHeight
-	tileY := uint(y) % tileHeight
-
-	scx := uint(v.scx.val())
 	bgPalette := v.bgPalette()
 	// Oh god is this ugly...
-	for lcdX := uint(0); lcdX < LCDSizeX; lcdX++ {
-		//fmt.Printf("setting %v, %v\n", lcdX, ly)
-		x := scx + lcdX
-		//fmt.Printf("location in tilemap %v, %v\n", x, y)
-		tileColumn := (x / tileWidth) % bgMapWidth
-		//fmt.Printf("tile col/row %v, %v\n", tileColumn, tileRow)
-		tileX := (x) % tileWidth
-		//fmt.Printf("in-tile pix offset %v, %v\n", tileX, tileY)
-		//tileNum := bgMap[tileRow*bgMapWidth+tileColumn]
-		tileNum := bgMap[tileRow*bgMapWidth+tileColumn]
-		// These are signed, so remap them
-		//fmt.Printf("tile number %v\n", tileNum)
-		if startAt8800 {
-			//old := int(tileNum)
-			//if tileNum&0x80 != 0 {
-			//		old = -int(^uint(tileNum) + 1)
-			//	}
-			tileNum += 0x80
-			//fmt.Printf("converted from %v to %v\n", old, tileNum)
+
+	// If the background is enabled then draw it first
+	if lcdc&0x01 != 0 {
+		y := uint(v.scy.val()) + ly
+		tileRow := (uint(y) / tileHeight) % bgMapHeight
+		tileY := uint(y) % tileHeight
+
+		scx := uint(v.scx.val())
+
+		for lcdX := uint(0); lcdX < LCDSizeX; lcdX++ {
+			//fmt.Printf("setting %v, %v\n", lcdX, ly)
+			x := scx + lcdX
+			//fmt.Printf("location in tilemap %v, %v\n", x, y)
+			tileColumn := (x / tileWidth) % bgMapWidth
+			//fmt.Printf("tile col/row %v, %v\n", tileColumn, tileRow)
+			tileX := (x) % tileWidth
+			//fmt.Printf("in-tile pix offset %v, %v\n", tileX, tileY)
+			//tileNum := bgMap[tileRow*bgMapWidth+tileColumn]
+			tileNum := bgMap[tileRow*bgMapWidth+tileColumn]
+			// These are signed, so remap them
+			//fmt.Printf("tile number %v\n", tileNum)
+			if startAt8800 {
+				//old := int(tileNum)
+				//if tileNum&0x80 != 0 {
+				//		old = -int(^uint(tileNum) + 1)
+				//	}
+				tileNum += 0x80
+				//fmt.Printf("converted from %v to %v\n", old, tileNum)
+			}
+
+			tileStart := uint(tileNum) * 16
+			//fmt.Printf("tile start idx %v\n", tileStart)
+			tile := chrTiles[tileStart : tileStart+16]
+			//fmt.Printf("Tile raw value %v+\n", tile)
+
+			v.buf[ly*LCDSizeX+lcdX] = bgPalette[tilePix(tile, tileX, tileY)]
 		}
-
-		tileStart := uint(tileNum) * 16
-		//fmt.Printf("tile start idx %v\n", tileStart)
-		tile := chrTiles[tileStart : tileStart+16]
-		//fmt.Printf("Tile raw value %v+\n", tile)
-
-		v.buf[ly*LCDSizeX+lcdX] = bgPalette[tilePix(tile, tileX, tileY)]
+	}
+	// Now draw the window if it is enabled and we're within it.
+	wy := uint(v.wy.val())
+	wx := uint(v.wx.val())
+	if lcdc&0x10 != 0 && wy >= ly {
+		xStart := int(wx - 7)
+		if xStart < 0 {
+			xStart = 0
+		}
+		y := ly - wy
+		tileRow := (uint(y) / tileHeight) % bgMapHeight
+		tileY := uint(y) % tileHeight
+		for lcdX := uint(xStart); lcdX < LCDSizeX; lcdX++ {
+			x := lcdX + 7 - wx
+			tileColumn := (x / tileWidth) % bgMapWidth
+			tileX := (x) % tileWidth
+			tileNum := winMap[tileRow*bgMapWidth+tileColumn]
+			if startAt8800 {
+				tileNum += 0x80
+			}
+			tileStart := uint(tileNum) * 16
+			tile := chrTiles[tileStart : tileStart+16]
+			v.buf[ly*LCDSizeX+lcdX] = bgPalette[tilePix(tile, tileX, tileY)]
+		}
 	}
 }
