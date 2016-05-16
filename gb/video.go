@@ -524,6 +524,8 @@ func (v *Video) drawSprites(sys *Sys, lcdc uint8, ly uint, spriteTiles []byte) {
 		for lcdX := uint(startX); lcdX < lcdX+8 && lcdX < LCDSizeX; lcdX++ {
 			// Sprite has lower priority than background and bg
 			// isn't 0, so skip this pixel.
+			// XXX(gerow): This doesn't take into account sprites
+			// of a lower priority getting drawn before.
 			if ((lcdc&0x80 != 0) || sprite.priority()) && v.buf[ly*LCDSizeX+lcdX] != 0 {
 				continue
 			}
