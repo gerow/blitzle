@@ -545,6 +545,61 @@ func TestLD8Bit(t *testing.T) {
 		0x4d, // LD C,L
 		0x4e, // LD C,(HL)
 		0x4f, // LD C,A
+
+		0x50, // LD D,B
+		0x51, // LD D,C
+		0x52, // LD D,D
+		0x53, // LD D,E
+		0x54, // LD D,H
+		0x55, // LD D,L
+		0x56, // LD D,(HL)
+		0x57, // LD D,A
+
+		0x58, // LD E,B
+		0x59, // LD E,C
+		0x5a, // LD E,D
+		0x5b, // LD E,E
+		0x5c, // LD E,H
+		0x5d, // LD E,L
+		0x5e, // LD E,(HL)
+		0x5f, // LD E,A
+
+		0x60, // LD H,B
+		0x61, // LD H,C
+		0x62, // LD H,D
+		0x63, // LD H,E
+		0x64, // LD H,H
+		0x65, // LD H,L
+		0x66, // LD H,(HL)
+		0x67, // LD H,A
+
+		0x68, // LD L,B
+		0x69, // LD L,C
+		0x6a, // LD L,D
+		0x6b, // LD L,E
+		0x6c, // LD L,H
+		0x6d, // LD L,L
+		0x6e, // LD L,(HL)
+		0x6f, // LD L,A
+
+		0x60, // LD (HL),B
+		0x61, // LD (HL),C
+		0x62, // LD (HL),D
+		0x63, // LD (HL),E
+		0x64, // LD (HL),H
+		0x65, // LD (HL),L
+		//0x66, // LD (HL),(HL) This is actually HALT
+		0x67, // LD (HL),A
+
+		0x68, // LD A,B
+		0x69, // LD A,C
+		0x6a, // LD A,D
+		0x6b, // LD A,E
+		0x6c, // LD A,H
+		0x6d, // LD A,L
+		0x6e, // LD A,(HL)
+		0x6f, // LD A,A
+
 	})
 	s.cpu.b = 1
 	s.cpu.c = 2
@@ -626,4 +681,47 @@ func TestLD8Bit(t *testing.T) {
 	checkStep(t, s, 4) // LD C,A
 	checkIP(t, s, 0x110)
 	checkBr(t, s, C, 7)
+
+	// Reset c back to 2
+	s.cpu.c = 2
+
+	// Check target D
+	checkStep(t, s, 4) // LD D,B
+	checkIP(t, s, 0x111)
+	checkBr(t, s, D, 1)
+
+	checkStep(t, s, 4) // LD D,C
+	checkIP(t, s, 0x112)
+	checkBr(t, s, D, 2)
+
+	// Reset d to 3
+	s.cpu.d = 3
+
+	checkStep(t, s, 4) // LD D,D
+	checkIP(t, s, 0x113)
+	checkBr(t, s, D, 3)
+
+	checkStep(t, s, 4) // LD D,E
+	checkIP(t, s, 0x114)
+	checkBr(t, s, D, 4)
+
+	checkStep(t, s, 4) // LD D,H
+	checkIP(t, s, 0x115)
+	checkBr(t, s, D, 0xc0)
+
+	checkStep(t, s, 4) // LD D,L
+	checkIP(t, s, 0x116)
+	checkBr(t, s, D, 0x05)
+
+	checkStep(t, s, 8) // LD D,(HL)
+	checkIP(t, s, 0x117)
+	checkBr(t, s, D, 6)
+
+	checkStep(t, s, 4) // LD D,A
+	checkIP(t, s, 0x118)
+	checkBr(t, s, D, 7)
+
+	// Reset d back to 3
+	s.cpu.c = 3
+
 }
