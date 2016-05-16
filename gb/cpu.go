@@ -258,6 +258,17 @@ const (
 	Imm
 )
 
+var ByteRegisterNameMap map[ByteRegister]string = map[ByteRegister]string{
+	B:     "B",
+	C:     "C",
+	D:     "D",
+	E:     "E",
+	H:     "H",
+	L:     "L",
+	HLind: "(HL)",
+	Imm:   "d8",
+}
+
 /* Read register byte */
 func (c *CPU) rrb(br ByteRegister) uint8 {
 	switch br {

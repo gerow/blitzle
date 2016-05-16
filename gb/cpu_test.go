@@ -59,7 +59,7 @@ func checkSP(t *testing.T, s *Sys, expected uint16) {
 
 func checkBr(t *testing.T, s *Sys, br ByteRegister, expected uint8) {
 	if v := s.cpu.rrb(br); v != expected {
-		t.Errorf("Expected reg=%02Xh, got %02Xh\n", expected, v)
+		t.Errorf("Expected %s=%02Xh, got %02Xh\n", ByteRegisterNameMap[br], expected, v)
 	}
 }
 
@@ -523,4 +523,57 @@ func TestCP(t *testing.T) {
 	if s.cpu.a != 0x00 {
 		t.Errorf("Expected A=00h, got %02Xh\n", s.cpu.a)
 	}
+}
+
+func TestLD8Bit(t *testing.T) {
+	s := S([]byte{
+		0x40, // LD B,B
+		0x41, // LD B,C
+		0x42, // LD B,D
+		0x43, // LD B,E
+		0x44, // LD B,H
+		0x45, // LD B,L
+		0x46, // LD B,(HL)
+		0x47, // LD B,A
+	})
+	s.cpu.b = 1
+	s.cpu.c = 2
+	s.cpu.d = 3
+	s.cpu.e = 4
+	s.cpu.h = 0xc0
+	s.cpu.l = 0x05
+	s.Wb(0xc005, 6)
+	s.cpu.a = 7
+
+	checkStep(t, s, 4) // LD B,B
+	checkIP(t, s, 0x101)
+	checkBr(t, s, B, 1)
+
+	checkStep(t, s, 4) // LD B,C
+	checkIP(t, s, 0x102)
+	checkBr(t, s, B, 2)
+
+	checkStep(t, s, 4) // LD B,D
+	checkIP(t, s, 0x103)
+	checkBr(t, s, B, 3)
+
+	checkStep(t, s, 4) // LD B,E
+	checkIP(t, s, 0x104)
+	checkBr(t, s, B, 4)
+
+	checkStep(t, s, 4) // LD B,H
+	checkIP(t, s, 0x105)
+	checkBr(t, s, B, 0xc0)
+
+	checkStep(t, s, 4) // LD B,L
+	checkIP(t, s, 0x106)
+	checkBr(t, s, B, 0x05)
+
+	checkStep(t, s, 8) // LD B,(HL)
+	checkIP(t, s, 0x107)
+	checkBr(t, s, B, 6)
+
+	checkStep(t, s, 4) // LD B,A
+	checkIP(t, s, 0x108)
+	checkBr(t, s, B, 7)
 }
