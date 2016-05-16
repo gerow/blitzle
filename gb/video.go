@@ -494,7 +494,7 @@ func (v *Video) drawSprites(sys *Sys, lcdc uint8, ly uint, spriteTiles []byte) {
 	// naturally cause higher priority sprites to be drawn over lower
 	// priority sprites.
 	for _, sprite := range relevantSprites {
-		xStart := int(sprite.x - 8)
+		xStart := int(sprite.x) - 8
 		if xStart < 0 {
 			xStart = 0
 		}
