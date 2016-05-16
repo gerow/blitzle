@@ -308,6 +308,16 @@ func (v *Video) chrTiles(sys *Sys, map2 bool) []byte {
 	return v.videoRAM.data[chrTilesBGMap1InRAM : chrTilesBGMap1InRAM+chrTilesSize]
 }
 
+func (v *Video) bgPalette() map[Pixel]Pixel {
+	val := v.bgp.val()
+	return map[Pixel]Pixel{
+		0: Pixel(val & 0x3),
+		1: Pixel((val >> 2) & 0x3),
+		2: Pixel((val >> 4) & 0x3),
+		3: Pixel((val >> 6) & 0x3),
+	}
+}
+
 func tilePix(chrTile []byte, x uint, y uint) Pixel {
 	//	b := chrTile[y*2+x/8]
 	lsbByte := chrTile[y*2]
@@ -339,6 +349,7 @@ func (v *Video) drawLine(sys *Sys) {
 	tileY := uint(y) % tileHeight
 
 	scx := uint(v.scx.val())
+	bgPalette := v.bgPalette()
 	// Oh god is this ugly...
 	for lcdX := uint(0); lcdX < LCDSizeX; lcdX++ {
 		//fmt.Printf("setting %v, %v\n", lcdX, ly)
@@ -366,6 +377,6 @@ func (v *Video) drawLine(sys *Sys) {
 		tile := chrTiles[tileStart : tileStart+16]
 		//fmt.Printf("Tile raw value %v+\n", tile)
 
-		v.buf[ly*LCDSizeX+lcdX] = tilePix(tile, tileX, tileY)
+		v.buf[ly*LCDSizeX+lcdX] = bgPalette[tilePix(tile, tileX, tileY)]
 	}
 }
