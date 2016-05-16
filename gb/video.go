@@ -3,6 +3,7 @@ package gb
 import (
 	"bytes"
 	"fmt"
+	"sort"
 )
 
 const bufferSizeX uint = 256
@@ -248,6 +249,18 @@ type OAMblock struct {
 	x       uint8
 	pattern uint8
 	flags   uint8
+	index   uint
+}
+
+type OAMblocksByReversePriority []OAMblock
+
+func (a OAMblocksByReversePriority) Len() int      { return len(a) }
+func (a OAMblocksByReversePriority) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
+func (a OAMblocksByReversePriority) Less(i, j int) bool {
+	if a[i].x == a[j].x {
+		return a[i].index > a[j].index
+	}
+	return a[i].x > a[j].x
 }
 
 func (o *OAMblock) priority() bool {
@@ -266,7 +279,7 @@ func (o *OAMblock) palette() bool {
 	return o.flags&0x10 != 0
 }
 
-func (v *Video) oamBlocks() *[nOAMblocks]OAMblock {
+func (v *Video) oamBlocks() [nOAMblocks]OAMblock {
 	i := uint(0)
 	out := [nOAMblocks]OAMblock{}
 	for n := uint(0); n < nOAMblocks; n++ {
@@ -274,11 +287,12 @@ func (v *Video) oamBlocks() *[nOAMblocks]OAMblock {
 			v.oam.data[i],
 			v.oam.data[i+1],
 			v.oam.data[i+2],
-			v.oam.data[i+3]}
+			v.oam.data[i+3],
+			n}
 		i += OAMblockSize
 	}
 
-	return &out
+	return out
 }
 
 const (
@@ -318,8 +332,33 @@ func (v *Video) bgPalette() map[Pixel]Pixel {
 	}
 }
 
+func (v *Video) obPalette0() map[Pixel]Pixel {
+	val := v.obp0.val()
+	return map[Pixel]Pixel{
+		0: Pixel(val & 0x3),
+		1: Pixel((val >> 2) & 0x3),
+		2: Pixel((val >> 4) & 0x3),
+		3: Pixel((val >> 6) & 0x3),
+	}
+}
+
+func (v *Video) obPalette1() map[Pixel]Pixel {
+	val := v.obp1.val()
+	return map[Pixel]Pixel{
+		0: Pixel(val & 0x3),
+		1: Pixel((val >> 2) & 0x3),
+		2: Pixel((val >> 4) & 0x3),
+		3: Pixel((val >> 6) & 0x3),
+	}
+}
+
 func tilePix(chrTile []byte, x uint, y uint) Pixel {
 	//	b := chrTile[y*2+x/8]
+	// It's a doubletall sprite, so use the set of bytes
+	if y > 8 {
+		chrTile = chrTile[16:]
+		y -= 8
+	}
 	lsbByte := chrTile[y*2]
 	msbByte := chrTile[y*2+1]
 	v := ((lsbByte >> (7 - x)) & 1) | (((msbByte >> (7 - x)) & 1) << 1)
@@ -343,6 +382,7 @@ func (v *Video) drawLine(sys *Sys) {
 	//fmt.Printf("lcdc is %02Xh\n", lcdc)
 	startAt8800 := lcdc&0x10 == 0
 	chrTiles := v.chrTiles(sys, startAt8800)
+	spriteTiles := v.chrTiles(sys, false)
 
 	//v.DumpTiles(sys)
 	ly := uint(v.ly.val())
@@ -408,6 +448,100 @@ func (v *Video) drawLine(sys *Sys) {
 			tileStart := uint(tileNum) * 16
 			tile := chrTiles[tileStart : tileStart+16]
 			v.buf[ly*LCDSizeX+lcdX] = bgPalette[tilePix(tile, tileX, tileY)]
+		}
+	}
+	// Finally draw all the spirtes
+	if lcdc&0x02 != 0 {
+		v.drawSprites(sys, lcdc, ly, spriteTiles)
+	}
+}
+
+func (v *Video) drawSprites(sys *Sys, lcdc uint8, ly uint, spriteTiles []byte) {
+	sprites := v.oamBlocks()
+	relevantSprites := []OAMblock{}
+	tallSprites := lcdc&0x04 != 0
+	obPalette0 := v.obPalette0()
+	obPalette1 := v.obPalette1()
+	for _, sprite := range sprites {
+		// We're above the sprite
+		if int(sprite.y)-16 <= int(ly) {
+			continue
+		}
+		if tallSprites {
+			// We're below the sprite
+			if int(sprite.y)-16+16 > int(ly) {
+				continue
+			}
+		} else {
+			// We're below the sprite
+			if int(sprite.y)-16+8 > int(ly) {
+				continue
+			}
+		}
+		// If you made it this far then congratulations sprite, you're
+		// relevant!
+		relevantSprites = append(relevantSprites, sprite)
+	}
+	// Now sort the spirtes by x pos using idx as a tiebreaker; this places
+	// them in priority order.
+	sort.Sort(OAMblocksByReversePriority(relevantSprites))
+	if len(relevantSprites) > 10 {
+		fmt.Printf("!! More than 10 sprites on ly=%d", ly)
+		relevantSprites = relevantSprites[:10]
+	}
+
+	// Now just draw the sprites in reverse priority order. This will
+	// naturally cause higher priority sprites to be drawn over lower
+	// priority sprites.
+	for _, sprite := range relevantSprites {
+		xStart := int(sprite.x - 8)
+		if xStart < 0 {
+			xStart = 0
+		}
+		spriteY := (uint(sprite.y) + 16) - ly
+		if sprite.yFlip() {
+			if tallSprites {
+				spriteY = 16 - spriteY
+			} else {
+				spriteY = 8 - spriteY
+			}
+		}
+		tileNum := sprite.pattern
+		if tallSprites {
+			tileNum &^= 0x01
+		}
+		tileStart := uint(tileNum) * 16
+		var tile []byte
+		if tallSprites {
+			tile = spriteTiles[tileStart : tileStart+32]
+		} else {
+			tile = spriteTiles[tileStart : tileStart+16]
+		}
+		startX := int(sprite.x) - 8
+		if startX < 0 {
+			startX = 0
+		}
+		for lcdX := uint(startX); lcdX < lcdX+8 && lcdX < LCDSizeX; lcdX++ {
+			// Sprite has lower priority than background and bg
+			// isn't 0, so skip this pixel.
+			if ((lcdc&0x80 != 0) || sprite.priority()) && v.buf[ly*LCDSizeX+lcdX] != 0 {
+				continue
+			}
+			spriteX := (uint(sprite.x) + 8) - lcdX
+			if sprite.xFlip() {
+				spriteX = 8 - spriteX
+			}
+			pix := tilePix(tile, spriteX, spriteY)
+			// We're a transparent pixel, so skip
+			if pix == 0 {
+				continue
+			}
+			if sprite.palette() {
+				pix = obPalette1[pix]
+			} else {
+				pix = obPalette0[pix]
+			}
+			v.buf[ly*LCDSizeX+lcdX] = pix
 		}
 	}
 }
