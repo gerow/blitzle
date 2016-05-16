@@ -525,6 +525,7 @@ func TestCP(t *testing.T) {
 	}
 }
 
+// LD nn,nn
 func TestLD8Bit(t *testing.T) {
 	s := S([]byte{
 		0x40, // LD B,B
@@ -535,6 +536,15 @@ func TestLD8Bit(t *testing.T) {
 		0x45, // LD B,L
 		0x46, // LD B,(HL)
 		0x47, // LD B,A
+
+		0x48, // LD C,B
+		0x49, // LD C,C
+		0x4a, // LD C,D
+		0x4b, // LD C,E
+		0x4c, // LD C,H
+		0x4d, // LD C,L
+		0x4e, // LD C,(HL)
+		0x4f, // LD C,A
 	})
 	s.cpu.b = 1
 	s.cpu.c = 2
@@ -545,6 +555,7 @@ func TestLD8Bit(t *testing.T) {
 	s.Wb(0xc005, 6)
 	s.cpu.a = 7
 
+	// Check target B
 	checkStep(t, s, 4) // LD B,B
 	checkIP(t, s, 0x101)
 	checkBr(t, s, B, 1)
@@ -576,4 +587,43 @@ func TestLD8Bit(t *testing.T) {
 	checkStep(t, s, 4) // LD B,A
 	checkIP(t, s, 0x108)
 	checkBr(t, s, B, 7)
+
+	// Reset b to 1
+	s.cpu.b = 1
+
+	// Check target C
+	checkStep(t, s, 4) // LD C,B
+	checkIP(t, s, 0x109)
+	checkBr(t, s, C, 1)
+
+	// Reset c to 2
+	s.cpu.c = 2
+
+	checkStep(t, s, 4) // LD C,C
+	checkIP(t, s, 0x10a)
+	checkBr(t, s, C, 2)
+
+	checkStep(t, s, 4) // LD C,D
+	checkIP(t, s, 0x10b)
+	checkBr(t, s, C, 3)
+
+	checkStep(t, s, 4) // LD C,E
+	checkIP(t, s, 0x10c)
+	checkBr(t, s, C, 4)
+
+	checkStep(t, s, 4) // LD C,H
+	checkIP(t, s, 0x10d)
+	checkBr(t, s, C, 0xc0)
+
+	checkStep(t, s, 4) // LD C,L
+	checkIP(t, s, 0x10e)
+	checkBr(t, s, C, 0x05)
+
+	checkStep(t, s, 8) // LD C,(HL)
+	checkIP(t, s, 0x10f)
+	checkBr(t, s, C, 6)
+
+	checkStep(t, s, 4) // LD C,A
+	checkIP(t, s, 0x110)
+	checkBr(t, s, C, 7)
 }
