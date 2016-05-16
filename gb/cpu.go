@@ -265,6 +265,7 @@ var ByteRegisterNameMap map[ByteRegister]string = map[ByteRegister]string{
 	E:     "E",
 	H:     "H",
 	L:     "L",
+	A:     "A",
 	HLind: "(HL)",
 	Imm:   "d8",
 }

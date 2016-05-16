@@ -63,6 +63,12 @@ func checkBr(t *testing.T, s *Sys, br ByteRegister, expected uint8) {
 	}
 }
 
+func checkRb(t *testing.T, s *Sys, addr uint16, expected uint8) {
+	if v := s.Rb(addr); v != expected {
+		t.Errorf("Expected (%04Xh)=%02Xh, got %02Xh\n", addr, expected, v)
+	}
+}
+
 func checkBus(t *testing.T, s *Sys, addr uint16, expected uint8) {
 	if v := s.Rb(addr); v != expected {
 		t.Errorf("Expected (%04Xh)=%02Xh, got %02Xh\n", addr, expected, v)
@@ -582,23 +588,23 @@ func TestLD8Bit(t *testing.T) {
 		0x6e, // LD L,(HL)
 		0x6f, // LD L,A
 
-		0x60, // LD (HL),B
-		0x61, // LD (HL),C
-		0x62, // LD (HL),D
-		0x63, // LD (HL),E
-		0x64, // LD (HL),H
-		0x65, // LD (HL),L
-		//0x66, // LD (HL),(HL) This is actually HALT
-		0x67, // LD (HL),A
+		0x70, // LD (HL),B
+		0x71, // LD (HL),C
+		0x72, // LD (HL),D
+		0x73, // LD (HL),E
+		0x74, // LD (HL),H
+		0x75, // LD (HL),L
+		//0x76, // LD (HL),(HL) This is actually HALT
+		0x77, // LD (HL),A
 
-		0x68, // LD A,B
-		0x69, // LD A,C
-		0x6a, // LD A,D
-		0x6b, // LD A,E
-		0x6c, // LD A,H
-		0x6d, // LD A,L
-		0x6e, // LD A,(HL)
-		0x6f, // LD A,A
+		0x78, // LD A,B
+		0x79, // LD A,C
+		0x7a, // LD A,D
+		0x7b, // LD A,E
+		0x7c, // LD A,H
+		0x7d, // LD A,L
+		0x7e, // LD A,(HL)
+		0x7f, // LD A,A
 
 	})
 	s.cpu.b = 1
@@ -610,7 +616,7 @@ func TestLD8Bit(t *testing.T) {
 	s.Wb(0xc005, 6)
 	s.cpu.a = 7
 
-	// Check target B
+	// * Check target B
 	checkStep(t, s, 4) // LD B,B
 	checkIP(t, s, 0x101)
 	checkBr(t, s, B, 1)
@@ -646,7 +652,7 @@ func TestLD8Bit(t *testing.T) {
 	// Reset b to 1
 	s.cpu.b = 1
 
-	// Check target C
+	// * Check target C
 	checkStep(t, s, 4) // LD C,B
 	checkIP(t, s, 0x109)
 	checkBr(t, s, C, 1)
@@ -685,7 +691,7 @@ func TestLD8Bit(t *testing.T) {
 	// Reset c back to 2
 	s.cpu.c = 2
 
-	// Check target D
+	// * Check target D
 	checkStep(t, s, 4) // LD D,B
 	checkIP(t, s, 0x111)
 	checkBr(t, s, D, 1)
@@ -722,6 +728,201 @@ func TestLD8Bit(t *testing.T) {
 	checkBr(t, s, D, 7)
 
 	// Reset d back to 3
-	s.cpu.c = 3
+	s.cpu.d = 3
 
+	// * Check target E
+	checkStep(t, s, 4) // LD E,B
+	checkIP(t, s, 0x119)
+	checkBr(t, s, E, 1)
+
+	checkStep(t, s, 4) // LD E,C
+	checkIP(t, s, 0x11a)
+	checkBr(t, s, E, 2)
+
+	checkStep(t, s, 4) // LD E,D
+	checkIP(t, s, 0x11b)
+	checkBr(t, s, E, 3)
+
+	// Reset e to 4
+	s.cpu.e = 4
+
+	checkStep(t, s, 4) // LD E,E
+	checkIP(t, s, 0x11c)
+	checkBr(t, s, E, 4)
+
+	checkStep(t, s, 4) // LD E,H
+	checkIP(t, s, 0x11d)
+	checkBr(t, s, E, 0xc0)
+
+	checkStep(t, s, 4) // LD E,L
+	checkIP(t, s, 0x11e)
+	checkBr(t, s, E, 0x05)
+
+	checkStep(t, s, 8) // LD E,(HL)
+	checkIP(t, s, 0x11f)
+	checkBr(t, s, E, 6)
+
+	checkStep(t, s, 4) // LD E,A
+	checkIP(t, s, 0x120)
+	checkBr(t, s, E, 7)
+
+	// Reset e back to 4
+	s.cpu.e = 4
+
+	// * Check target H
+	checkStep(t, s, 4) // LD H,B
+	checkIP(t, s, 0x121)
+	checkBr(t, s, H, 1)
+
+	checkStep(t, s, 4) // LD H,C
+	checkIP(t, s, 0x122)
+	checkBr(t, s, H, 2)
+
+	checkStep(t, s, 4) // LD H,D
+	checkIP(t, s, 0x123)
+	checkBr(t, s, H, 3)
+
+	checkStep(t, s, 4) // LD H,E
+	checkIP(t, s, 0x124)
+	checkBr(t, s, H, 4)
+
+	// Reset h to 0xc0
+	s.cpu.h = 0xc0
+
+	checkStep(t, s, 4) // LD H,H
+	checkIP(t, s, 0x125)
+	checkBr(t, s, H, 0xc0)
+
+	checkStep(t, s, 4) // LD H,L
+	checkIP(t, s, 0x126)
+	checkBr(t, s, H, 0x05)
+
+	// Reset h to 0xc0
+	s.cpu.h = 0xc0
+
+	checkStep(t, s, 8) // LD H,(HL)
+	checkIP(t, s, 0x127)
+	checkBr(t, s, H, 6)
+
+	checkStep(t, s, 4) // LD H,A
+	checkIP(t, s, 0x128)
+	checkBr(t, s, H, 7)
+
+	// Reset h back to 0xc0
+	s.cpu.h = 0xc0
+
+	// * Check target L
+	checkStep(t, s, 4) // LD L,B
+	checkIP(t, s, 0x129)
+	checkBr(t, s, L, 1)
+
+	checkStep(t, s, 4) // LD L,C
+	checkIP(t, s, 0x12a)
+	checkBr(t, s, L, 2)
+
+	checkStep(t, s, 4) // LD L,D
+	checkIP(t, s, 0x12b)
+	checkBr(t, s, L, 3)
+
+	checkStep(t, s, 4) // LD L,E
+	checkIP(t, s, 0x12c)
+	checkBr(t, s, L, 4)
+
+	checkStep(t, s, 4) // LD L,H
+	checkIP(t, s, 0x12d)
+	checkBr(t, s, L, 0xc0)
+
+	// Reset l to 0x05
+	s.cpu.l = 0x05
+
+	checkStep(t, s, 4) // LD L,L
+	checkIP(t, s, 0x12e)
+	checkBr(t, s, L, 0x05)
+
+	// Reset l to 0x05
+	s.cpu.l = 0x05
+
+	checkStep(t, s, 8) // LD L,(HL)
+	checkIP(t, s, 0x12f)
+	checkBr(t, s, L, 6)
+
+	checkStep(t, s, 4) // LD L,A
+	checkIP(t, s, 0x130)
+	checkBr(t, s, L, 7)
+
+	// Reset l to 0x05
+	s.cpu.l = 0x05
+
+	// * Check target (HL)
+	checkStep(t, s, 8) // LD (HL),B
+	checkIP(t, s, 0x131)
+	checkRb(t, s, 0xc005, 1)
+
+	checkStep(t, s, 8) // LD (HL),C
+	checkIP(t, s, 0x132)
+	checkRb(t, s, 0xc005, 2)
+
+	checkStep(t, s, 8) // LD (HL),D
+	checkIP(t, s, 0x133)
+	checkRb(t, s, 0xc005, 3)
+
+	checkStep(t, s, 8) // LD (HL),E
+	checkIP(t, s, 0x134)
+	checkRb(t, s, 0xc005, 4)
+
+	checkStep(t, s, 8) // LD (HL),H
+	checkIP(t, s, 0x135)
+	checkRb(t, s, 0xc005, 0xc0)
+
+	checkStep(t, s, 8) // LD (HL),L
+	checkIP(t, s, 0x136)
+	checkRb(t, s, 0xc005, 0x05)
+
+	// Actually HALT
+	//checkStep(t, s, 8) // LD (HL),(HL)
+	//checkIP(t, s, 0x12f)
+	//checkBr(t, s, L, 6)
+
+	checkStep(t, s, 8) // LD (HL),A
+	checkIP(t, s, 0x137)
+	checkRb(t, s, 0xc005, 7)
+
+	// Reset (0xc005) to 6
+	s.Wb(0xc005, 6)
+
+	// * Check target A
+	checkStep(t, s, 4) // LD A,B
+	checkIP(t, s, 0x138)
+	checkBr(t, s, A, 1)
+
+	checkStep(t, s, 4) // LD A,C
+	checkIP(t, s, 0x139)
+	checkBr(t, s, A, 2)
+
+	checkStep(t, s, 4) // LD A,D
+	checkIP(t, s, 0x13a)
+	checkBr(t, s, A, 3)
+
+	checkStep(t, s, 4) // LD A,E
+	checkIP(t, s, 0x13b)
+	checkBr(t, s, A, 4)
+
+	checkStep(t, s, 4) // LD A,H
+	checkIP(t, s, 0x13c)
+	checkBr(t, s, A, 0xc0)
+
+	checkStep(t, s, 4) // LD A,L
+	checkIP(t, s, 0x13d)
+	checkBr(t, s, A, 0x05)
+
+	checkStep(t, s, 8) // LD A,(HL)
+	checkIP(t, s, 0x13e)
+	checkBr(t, s, A, 6)
+
+	// Reset a to 7
+	s.cpu.a = 7
+
+	checkStep(t, s, 4) // LD A,A
+	checkIP(t, s, 0x13f)
+	checkBr(t, s, A, 7)
 }
