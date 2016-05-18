@@ -54,16 +54,16 @@ func (b *BusHole) Asserts(addr uint16) bool {
 	return addr >= b.startAddr && addr <= b.endAddr
 }
 
-func NewSys(rom *ROM, videoSwapper VideoSwapper, serialSwapper SerialSwapper) *Sys {
+func NewSys(rom *ROM) *Sys {
 	systemRAM := NewSystemRAM()
 	hiRAM := NewHiRAM()
-	video := NewVideo(videoSwapper)
+	video := NewVideo()
 	cpu := NewCPU()
 	ieReg := NewMemRegister(0xffff)
 	ifReg := NewMemRegister(0xff0f)
 	timer := NewTimer()
 	joypad := NewJoypad()
-	serial := NewSerial(serialSwapper)
+	serial := NewSerial()
 	bh2 := NewBusHole(0xfea0, 0xff7f)
 	devs := []BusDev{
 		rom,
@@ -119,15 +119,6 @@ func (s *Sys) Step() {
 		//fmt.Print(s.video.State(s))
 	} else {
 		s.cpuWait -= 4
-	}
-	if s.Wall%(vblankCycles*30) == 0 {
-		bs1 := ButtonState{false, false, false, false, true, false, false, true}
-		fmt.Printf("!! Changing buttons to press A and Start\n")
-		s.UpdateButtons(bs1)
-	} else if s.Wall%(vblankCycles*30) == vblankCycles*15 {
-		bs2 := ButtonState{false, false, false, false, false, false, false, false}
-		fmt.Printf("!! Releasing buttons\n")
-		s.UpdateButtons(bs2)
 	}
 	s.Wall += 4
 }
@@ -262,6 +253,18 @@ func (s *Sys) HandleInterrupt() *Interrupt {
 
 	// If there aren't any interrupts to handle just return nil
 	return nil
+}
+
+func (s *Sys) SetVideoSwapper(videoSwapper VideoSwapper) {
+	s.video.swapper = videoSwapper
+}
+
+func (s *Sys) SetSerialSwapper(serialSwapper SerialSwapper) {
+	s.serial.swapper = serialSwapper
+}
+
+type UpdateButtonser interface {
+	UpdateButtons(state ButtonState)
 }
 
 func (s *Sys) UpdateButtons(state ButtonState) {

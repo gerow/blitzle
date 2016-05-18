@@ -9,9 +9,12 @@ import (
 )
 
 type Frontend struct {
-	window   *sdl.Window
-	renderer *sdl.Renderer
-	texture  *sdl.Texture
+	updateButtonser  gb.UpdateButtonser
+	window           *sdl.Window
+	renderer         *sdl.Renderer
+	texture          *sdl.Texture
+	eventWatchHandle sdl.EventWatchHandle
+	buttonState      gb.ButtonState
 }
 
 var colorMap map[gb.Pixel]uint32 = map[gb.Pixel]uint32{
@@ -21,7 +24,7 @@ var colorMap map[gb.Pixel]uint32 = map[gb.Pixel]uint32{
 	3: 0x000000ff,
 }
 
-func NewFrontend() (*Frontend, error) {
+func NewFrontend(updateButtonser gb.UpdateButtonser) (*Frontend, error) {
 	window, err := sdl.CreateWindow(
 		"Blitzle", sdl.WINDOWPOS_UNDEFINED, sdl.WINDOWPOS_UNDEFINED,
 		800, 600, sdl.WINDOW_SHOWN)
@@ -34,7 +37,9 @@ func NewFrontend() (*Frontend, error) {
 	}
 	texture, err := renderer.CreateTexture(sdl.PIXELFORMAT_RGBA8888,
 		sdl.TEXTUREACCESS_STREAMING, int(gb.LCDSizeX), int(gb.LCDSizeY))
-	return &Frontend{window, renderer, texture}, nil
+	f := &Frontend{updateButtonser, window, renderer, texture, 0, gb.ButtonState{}}
+	f.eventWatchHandle = sdl.AddEventWatch(f)
+	return f, nil
 }
 
 func getColor(p gb.Pixel) uint32 {
@@ -57,6 +62,48 @@ func (f *Frontend) VideoSwap(pixels [gb.LCDSizeX * gb.LCDSizeY]gb.Pixel) {
 	f.texture.Unlock()
 	f.renderer.Copy(f.texture, nil, nil)
 	f.renderer.Present()
+}
+
+func (f *Frontend) Close() {
+	sdl.DelEventWatch(f.eventWatchHandle)
+}
+
+func (f *Frontend) getKey(code sdl.Scancode) *bool {
+	switch code {
+	case sdl.SCANCODE_DOWN:
+		return &f.buttonState.Down
+	case sdl.SCANCODE_UP:
+		return &f.buttonState.Up
+	case sdl.SCANCODE_LEFT:
+		return &f.buttonState.Left
+	case sdl.SCANCODE_RIGHT:
+		return &f.buttonState.Right
+	case sdl.SCANCODE_RETURN:
+		return &f.buttonState.Start
+	case sdl.SCANCODE_RSHIFT:
+		return &f.buttonState.SelectButton
+	case sdl.SCANCODE_X:
+		return &f.buttonState.B
+	case sdl.SCANCODE_Z:
+		return &f.buttonState.A
+	}
+	return nil
+}
+
+func (f *Frontend) FilterEvent(e sdl.Event) bool {
+	switch v := e.(type) {
+	case sdl.KeyDownEvent:
+		if k := f.getKey(v.Keysym.Scancode); k != nil {
+			*k = true
+			f.updateButtonser.UpdateButtons(f.buttonState)
+		}
+	case sdl.KeyUpEvent:
+		if k := f.getKey(v.Keysym.Scancode); k != nil {
+			*k = false
+			f.updateButtonser.UpdateButtons(f.buttonState)
+		}
+	}
+	return false
 }
 
 type WriterSerialSwapper struct {

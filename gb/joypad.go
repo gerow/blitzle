@@ -1,5 +1,9 @@
 package gb
 
+import (
+	"sync"
+)
+
 type ButtonState struct {
 	Down         bool
 	Up           bool
@@ -14,13 +18,16 @@ type ButtonState struct {
 type Joypad struct {
 	val   uint8
 	state ButtonState
+	sync.Mutex
 }
 
 func NewJoypad() *Joypad {
-	return &Joypad{0x30, ButtonState{}}
+	return &Joypad{0x30, ButtonState{}, sync.Mutex{}}
 }
 
 func (j *Joypad) UpdateButtons(sys *Sys, state ButtonState) {
+	j.Lock()
+	defer j.Unlock()
 	initialVal := j.value()
 	j.state = state
 	newVal := j.value()
@@ -82,6 +89,8 @@ func (j *Joypad) value() uint8 {
 }
 
 func (j *Joypad) R(_ uint16) uint8 {
+	j.Lock()
+	defer j.Unlock()
 	return j.value()
 }
 

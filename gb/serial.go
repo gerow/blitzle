@@ -20,9 +20,9 @@ type Serial struct {
 	newSb              uint8
 }
 
-func NewSerial(swapper SerialSwapper) *Serial {
+func NewSerial() *Serial {
 	return &Serial{
-		swapper,
+		nil,
 		0,
 		0,
 		make(chan bool),
@@ -59,13 +59,17 @@ func (s *Serial) R(addr uint16) uint8 {
 
 func (s *Serial) doSwap(concurrent bool) {
 	if !concurrent {
-		s.sb = s.swapper.SerialSwap(s.sb)
+		if s.swapper != nil {
+			s.sb = s.swapper.SerialSwap(s.sb)
+		}
 		return
 	}
 	s.transferInProgress = true
 	oldSb := s.sb
 	go func() {
-		s.newSb = s.swapper.SerialSwap(oldSb)
+		if s.swapper != nil {
+			s.newSb = s.swapper.SerialSwap(oldSb)
+		}
 		s.transferDone <- true
 	}()
 }

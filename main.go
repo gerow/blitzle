@@ -37,17 +37,19 @@ func main() {
 	fmt.Print(r.Info())
 	sdl.Init(sdl.INIT_EVERYTHING)
 
-	fe, err := frontend.NewFrontend()
+	sys := gb.NewSys(r)
+	fe, err := frontend.NewFrontend(sys)
 	if err != nil {
 		panic(err)
 	}
+	defer fe.Close()
+	sys.SetVideoSwapper(fe)
 	serialOut, err := os.Create("serial.log")
 	if err != nil {
 		panic(err)
 	}
 	defer serialOut.Close()
-	sys := gb.NewSys(r, fe, &frontend.WriterSerialSwapper{serialOut})
-	bs := gb.ButtonState{false, false, false, false, true, false, false, true}
-	sys.UpdateButtons(bs)
+	sys.SetSerialSwapper(&frontend.WriterSerialSwapper{serialOut})
+
 	sys.Run()
 }

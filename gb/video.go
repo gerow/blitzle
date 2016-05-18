@@ -72,9 +72,9 @@ type VideoSwapper interface {
 	VideoSwap(pixels [LCDSizeX * LCDSizeY]Pixel)
 }
 
-func NewVideo(swapper VideoSwapper) *Video {
+func NewVideo() *Video {
 	v := &Video{}
-	v.swapper = swapper
+	v.swapper = nil
 	v.videoRAM = NewRAM(0x8000, 0x9fff)
 	v.oam = NewRAM(0xfe00, 0xfe9f)
 	v.lcdc = NewMemRegister(0xff40)
@@ -195,7 +195,9 @@ func (v *Video) Step(sys *Sys) {
 		}
 		// We're done drawing lines, so send send the output up to
 		// gl so it can munge it into a gl texture
-		v.swapper.VideoSwap(v.buf)
+		if v.swapper != nil {
+			v.swapper.VideoSwap(v.buf)
+		}
 		fmt.Printf("wall: %d\n", sys.Wall)
 	}
 	// Interrupt for mode 2 OAM (which occurs at the beginning of a new line)
