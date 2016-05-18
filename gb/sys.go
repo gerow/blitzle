@@ -114,11 +114,20 @@ func (s *Sys) Step() {
 	s.video.Step(s)
 	if s.cpuWait == 0 {
 		s.cpuWait = s.cpu.Step(s)
-		//fmt.Print(s.cpu.State(s))
+		fmt.Print(s.cpu.State(s))
 		//fmt.Printf(s.timer.State())
 		//fmt.Print(s.video.State(s))
 	} else {
 		s.cpuWait -= 4
+	}
+	if s.Wall%(vblankCycles*30) == 0 {
+		bs1 := ButtonState{false, false, false, false, true, false, false, true}
+		fmt.Printf("!! Changing buttons to press A and Start\n")
+		s.UpdateButtons(bs1)
+	} else if s.Wall%(vblankCycles*30) == vblankCycles*15 {
+		bs2 := ButtonState{false, false, false, false, false, false, false, false}
+		fmt.Printf("!! Releasing buttons\n")
+		s.UpdateButtons(bs2)
 	}
 	s.Wall += 4
 }

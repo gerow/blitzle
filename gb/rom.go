@@ -73,7 +73,8 @@ func LoadROM(data []byte) (*ROM, error) {
 	r.currentBank = 1
 
 	// Record RAM banks
-	r.ram = make([]byte, ramSizeMap[r.ramSize])
+	//r.ram = make([]byte, ramSizeMap[r.ramSize])
+	r.ram = make([]byte, ramSizeMap[5])
 	nRamBanks := uint(len(r.ram)) / ramBankSize
 	r.ramBanks = make([][]byte, nRamBanks)
 	// Special case here since $01 is smaller than a full bank
@@ -157,10 +158,11 @@ func (r *ROM) R(addr uint16) uint8 {
 	} else if addr < 0x8000 {
 		return r.banks[r.currentBank][addr-0x4000]
 	}
-	if !r.ramEnabled {
-		log.Printf("!!! Attempt to read from cart RAM when disabled\n")
-		return 0xff
-	}
+	//if !r.ramEnabled {
+	//	log.Printf("!!! Attempt to read from cart RAM when disabled\n")
+	//	return 0xff
+	//}
+	log.Printf("Read of %04Xh\n", addr)
 	return r.ramBanks[r.currentRAMBank][addr-0xa000]
 }
 
@@ -204,10 +206,10 @@ func (r *ROM) W(addr uint16, val uint8) {
 		return
 	}
 	if addr >= 0xa000 && addr < 0xc000 {
-		if !r.ramEnabled {
-			log.Printf("!!! Attempt to write to cart RAM when disabled\n")
-			return
-		}
+		//if !r.ramEnabled {
+		//	log.Printf("!!! Attempt to write to cart RAM when disabled\n")
+		//	return
+		//}
 		r.ramBanks[r.currentRAMBank][addr-0xa000] = val
 		return
 	}

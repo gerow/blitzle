@@ -226,20 +226,22 @@ func (c *CPU) State(sys *Sys) string {
 		o.WriteString("!!??!!\n")
 	}
 	o.WriteString(fmt.Sprintf("  SP: %04Xh\n", c.sp))
-	o.WriteString(fmt.Sprintf("Area around IP\n"))
+	//o.WriteString(fmt.Sprintf("Area around IP\n"))
 
-	for addr := c.ip - 10; addr < c.ip+10; addr++ {
-		ipChar := "*"
-		if addr != c.ip {
-			ipChar = " "
-		}
-		o.WriteString(fmt.Sprintf("%s%04Xh: %02Xh\n", ipChar, addr, sys.RbLog(addr, false)))
-	}
+	//	for addr := c.ip - 10; addr < c.ip+10; addr++ {
+	//		ipChar := "*"
+	//		if addr != c.ip {
+	//			ipChar = " "
+	//		}
+	//		o.WriteString(fmt.Sprintf("%s%04Xh: %02Xh\n", ipChar, addr, sys.RbLog(addr, false)))
+	//	}
+	o.WriteString(fmt.Sprintf("*%04Xh: %02Xh %02Xh %02Xh\n", c.ip,
+		sys.RbLog(c.ip, false), sys.RbLog(c.ip+1, false), sys.RbLog(c.ip+2, false)))
 
-	o.WriteString(fmt.Sprintf("Last 10 items on stack (most recent first):\n"))
-	for addr := c.sp; addr < c.sp+20; addr += 2 {
-		o.WriteString(fmt.Sprintf("%04Xh: %04Xh\n", addr, sys.RsLog(addr, false)))
-	}
+	//o.WriteString(fmt.Sprintf("Last 10 items on stack (most recent first):\n"))
+	//for addr := c.sp; addr < c.sp+20; addr += 2 {
+	//		o.WriteString(fmt.Sprintf("%04Xh: %04Xh\n", addr, sys.RsLog(addr, false)))
+	//	}
 
 	return o.String()
 }
