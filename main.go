@@ -11,6 +11,7 @@ import (
 	//	_ "net/http/pprof"
 	"os"
 	"runtime"
+	"time"
 )
 
 func main() {
@@ -43,6 +44,14 @@ func main() {
 		panic(err)
 	}
 	defer fe.Close()
+	// Create a ticker to periodically pump SDL events.
+	ticker := time.NewTicker(time.Millisecond * 1)
+	go func() {
+		for {
+			<-ticker.C
+			sdl.PumpEvents()
+		}
+	}()
 	sys.SetVideoSwapper(fe)
 	serialOut, err := os.Create("serial.log")
 	if err != nil {

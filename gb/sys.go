@@ -1,7 +1,8 @@
 package gb
 
 import (
-	"fmt"
+	//	"fmt"
+	"github.com/veandco/go-sdl2/sdl"
 	"log"
 )
 
@@ -109,12 +110,16 @@ func (s *Sys) Run() {
 
 // Step four clock cycls.
 func (s *Sys) Step() {
+	// XXX(gerow): sys should NOT need to know ANYTHING about sdl
+	if s.Wall%(vblankCycles*144) == 0 {
+		sdl.PumpEvents()
+	}
 	s.timer.Step(s)
 	s.serial.Step(s)
 	s.video.Step(s)
 	if s.cpuWait == 0 {
 		s.cpuWait = s.cpu.Step(s)
-		fmt.Print(s.cpu.State(s))
+		//fmt.Print(s.cpu.State(s))
 		//fmt.Printf(s.timer.State())
 		//fmt.Print(s.video.State(s))
 	} else {
@@ -232,7 +237,7 @@ func interruptName(intr Interrupt) string {
 }
 
 func (s *Sys) RaiseInterrupt(inter Interrupt) {
-	fmt.Printf("Interrupt %s raised!\n", interruptName(inter))
+	//fmt.Printf("Interrupt %s raised!\n", interruptName(inter))
 	s.ifReg.set(s.ifReg.val() | (1 << inter))
 }
 

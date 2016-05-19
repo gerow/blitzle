@@ -198,7 +198,7 @@ func (v *Video) Step(sys *Sys) {
 		if v.swapper != nil {
 			v.swapper.VideoSwap(v.buf)
 		}
-		fmt.Printf("wall: %d\n", sys.Wall)
+		//fmt.Printf("wall: %d\n", sys.Wall)
 	}
 	// Interrupt for mode 2 OAM (which occurs at the beginning of a new line)
 	if v.currentCycle%hCycles == 0 && stat&(1<<5) != 0 && v.currentCycle < vblankCycles {

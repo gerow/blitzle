@@ -1,6 +1,7 @@
 package frontend
 
 import (
+	"fmt"
 	"github.com/gerow/blitzle/gb"
 	"github.com/veandco/go-sdl2/sdl"
 	"io"
@@ -38,7 +39,7 @@ func NewFrontend(updateButtonser gb.UpdateButtonser) (*Frontend, error) {
 	texture, err := renderer.CreateTexture(sdl.PIXELFORMAT_RGBA8888,
 		sdl.TEXTUREACCESS_STREAMING, int(gb.LCDSizeX), int(gb.LCDSizeY))
 	f := &Frontend{updateButtonser, window, renderer, texture, 0, gb.ButtonState{}}
-	f.eventWatchHandle = sdl.AddEventWatch(f)
+	f.eventWatchHandle = sdl.AddEventWatch(f.FilterEvent)
 	return f, nil
 }
 
@@ -68,6 +69,17 @@ func (f *Frontend) Close() {
 	sdl.DelEventWatch(f.eventWatchHandle)
 }
 
+var buttonName = map[sdl.Scancode]string{
+	sdl.SCANCODE_DOWN:   "down",
+	sdl.SCANCODE_UP:     "up",
+	sdl.SCANCODE_LEFT:   "left",
+	sdl.SCANCODE_RIGHT:  "right",
+	sdl.SCANCODE_RETURN: "return",
+	sdl.SCANCODE_RSHIFT: "rshift",
+	sdl.SCANCODE_X:      "X",
+	sdl.SCANCODE_Z:      "Z",
+}
+
 func (f *Frontend) getKey(code sdl.Scancode) *bool {
 	switch code {
 	case sdl.SCANCODE_DOWN:
@@ -92,14 +104,16 @@ func (f *Frontend) getKey(code sdl.Scancode) *bool {
 
 func (f *Frontend) FilterEvent(e sdl.Event) bool {
 	switch v := e.(type) {
-	case sdl.KeyDownEvent:
+	case *sdl.KeyDownEvent:
 		if k := f.getKey(v.Keysym.Scancode); k != nil {
 			*k = true
+			fmt.Printf("%s pressed\n", buttonName[v.Keysym.Scancode])
 			f.updateButtonser.UpdateButtons(f.buttonState)
 		}
-	case sdl.KeyUpEvent:
+	case *sdl.KeyUpEvent:
 		if k := f.getKey(v.Keysym.Scancode); k != nil {
 			*k = false
+			fmt.Printf("%s released\n", buttonName[v.Keysym.Scancode])
 			f.updateButtonser.UpdateButtons(f.buttonState)
 		}
 	}
