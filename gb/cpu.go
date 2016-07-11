@@ -1419,22 +1419,22 @@ var ops [0x100]OpFunc = [0x100]OpFunc{
 	ALU(XOR, Imm),    /* XOR A,d8 */
 	RST(0x28, false), /* RST 28H */
 	/* 0xf0 */
-	LDH(false),       /* LDH A,(a8) */
-	POPAF,            /* POP AF */
-	LDHC(false),      /* LD A,(C) */
-	DI,               /* DI */
-	DRAGONS,          /* XXX */
-	PUSH(AF),         /* PUSH AF */
-	ALU(OR, Imm),     /* OR A,d8 */
-	RST(0x30, false), /* RST 30H */
-	LDHLSPimm,        /* LD HL,SP+r8 */
-	LDSPHL,           /* LD SP,HL */
-	LDSimmAddr(true), /* LD (a16),A */
-	EI,               /* EI */
-	DRAGONS,          /* XXX */
-	DRAGONS,          /* XXX */
-	ALU(CP, Imm),     /* CP A,d8 */
-	RST(0x38, false), /* RST 38H */
+	LDH(false),        /* LDH A,(a8) */
+	POPAF,             /* POP AF */
+	LDHC(false),       /* LD A,(C) */
+	DI,                /* DI */
+	DRAGONS,           /* XXX */
+	PUSH(AF),          /* PUSH AF */
+	ALU(OR, Imm),      /* OR A,d8 */
+	RST(0x30, false),  /* RST 30H */
+	LDHLSPimm,         /* LD HL,SP+r8 */
+	LDSPHL,            /* LD SP,HL */
+	LDSimmAddr(false), /* LD A,(a16) */
+	EI,                /* EI */
+	DRAGONS,           /* XXX */
+	DRAGONS,           /* XXX */
+	ALU(CP, Imm),      /* CP A,d8 */
+	RST(0x38, false),  /* RST 38H */
 }
 
 var cbops [0x100]OpFunc = [0x100]OpFunc{
