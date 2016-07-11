@@ -943,8 +943,8 @@ func ADDSPimm(cpu *CPU, sys *Sys) int {
 
 	cpu.fz = false
 	cpu.fn = false
-	cpu.fh = halfCarry(uint8(cpu.sp>>8), uint8(v>>8))
-	cpu.fc = carry(uint8(cpu.sp>>8), uint8(v>>8))
+	cpu.fh = halfCarry(uint8(cpu.sp), uint8(v))
+	cpu.fc = carry(uint8(cpu.sp), uint8(v))
 
 	cpu.sp += v
 
@@ -985,8 +985,8 @@ func LDHLSPimm(cpu *CPU, sys *Sys) int {
 
 	cpu.fz = false
 	cpu.fn = false
-	cpu.fh = halfCarry(uint8(cpu.sp>>8), uint8(v>>8))
-	cpu.fc = carry(uint8(cpu.sp>>8), uint8(v>>8))
+	cpu.fh = halfCarry(uint8(cpu.sp), uint8(v))
+	cpu.fc = carry(uint8(cpu.sp), uint8(v))
 
 	cpu.wrs(HL, cpu.sp+v)
 
