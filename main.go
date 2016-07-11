@@ -12,6 +12,9 @@ import (
 	"time"
 )
 
+var debug = flag.Bool("debug", false, "enable debugging messages, very slow")
+var serial = flag.String("serial", "", "file to write serial output to")
+
 func main() {
 	// XXX(gerow): Hack for issues in go-sdl2
 	runtime.LockOSThread()
@@ -34,6 +37,7 @@ func main() {
 	sdl.Init(sdl.INIT_EVERYTHING)
 
 	sys := gb.NewSys(r)
+	sys.Debug = *debug
 	fe, err := frontend.NewFrontend(sys)
 	if err != nil {
 		panic(err)
@@ -48,12 +52,14 @@ func main() {
 		}
 	}()
 	sys.SetVideoSwapper(fe)
-	serialOut, err := os.Create("serial.log")
-	if err != nil {
-		panic(err)
+	if *serial != "" {
+		serialOut, err := os.Create(*serial)
+		if err != nil {
+			panic(err)
+		}
+		defer serialOut.Close()
+		sys.SetSerialSwapper(&frontend.WriterSerialSwapper{serialOut})
 	}
-	defer serialOut.Close()
-	sys.SetSerialSwapper(&frontend.WriterSerialSwapper{serialOut})
 
 	sys.Run()
 }
