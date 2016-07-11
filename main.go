@@ -7,17 +7,12 @@ import (
 	"github.com/gerow/blitzle/gb"
 	"github.com/veandco/go-sdl2/sdl"
 	"log"
-	//	"net/http"
-	//	_ "net/http/pprof"
 	"os"
 	"runtime"
 	"time"
 )
 
 func main() {
-	//	go func() {
-	//		log.Println(http.ListenAndServe("localhost:6060", nil))
-	//	}()
 	// XXX(gerow): Hack for issues in go-sdl2
 	runtime.LockOSThread()
 	flag.Usage = func() {
