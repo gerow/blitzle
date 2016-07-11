@@ -1,7 +1,7 @@
 package gb
 
 import (
-	//	"fmt"
+	"fmt"
 	"github.com/veandco/go-sdl2/sdl"
 	"log"
 )
@@ -122,7 +122,9 @@ func (s *Sys) Step() {
 	s.video.Step(s)
 	if s.cpuWait == 0 {
 		s.cpuWait = s.cpu.Step(s)
-		//fmt.Print(s.cpu.State(s))
+		if s.Debug {
+			fmt.Print(s.cpu.State(s))
+		}
 		//fmt.Printf(s.timer.State())
 		//fmt.Print(s.video.State(s))
 	} else {
