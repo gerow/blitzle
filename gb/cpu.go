@@ -551,12 +551,10 @@ func ADDS(sr ShortRegister) OpFunc {
 		val := cpu.rrs(sr)
 
 		cpu.wrs(HL, hl+val)
-		h := uint8(hl >> 8)
-		valHigh := uint8(val >> 8)
 
+		cpu.fh = uint32(hl&0xfff)+uint32(val&0xfff) > 0xfff
+		cpu.fc = uint32(hl)+uint32(val) > 0xffff
 		cpu.fn = false
-		cpu.fh = halfCarry(h, valHigh)
-		cpu.fc = carry(h, valHigh)
 
 		cpu.ip++
 		return 8
