@@ -97,8 +97,7 @@ func halfBorrowWithC(a uint8, b uint8, c bool) bool {
 	} else {
 		carryMod = 0
 	}
-	b16 := uint16(b) + carryMod
-	return b16&0xf > uint16(a)&0xf
+	return uint16(b&0xf)+carryMod > uint16(a&0xf)
 }
 
 func borrow(a uint8, b uint8) bool {
@@ -455,7 +454,7 @@ func INCDECB(br ByteRegister, mod int) OpFunc {
 		if mod == 1 {
 			cpu.fh = halfCarry(v, 1)
 		} else {
-			cpu.fh = !halfBorrow(v, 1)
+			cpu.fh = halfBorrow(v, 1)
 		}
 
 		cpu.ip++
