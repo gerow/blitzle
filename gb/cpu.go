@@ -64,8 +64,7 @@ func halfCarryWithC(a uint8, b uint8, c bool) bool {
 	} else {
 		carryMod = 0
 	}
-	a16 := uint16(a) + carryMod
-	return (a16&0xf + uint16(b)&0xf) > 0xf
+	return uint16(a&0xf)+uint16(b&0xf)+carryMod > 0xf
 }
 
 func carry(a uint8, b uint8) bool {
