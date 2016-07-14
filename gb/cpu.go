@@ -505,7 +505,7 @@ func RLCA(cpu *CPU, sys *Sys) int {
 	a |= oldA >> 7
 	cpu.wrb(A, a)
 
-	cpu.fz = a == 0
+	cpu.fz = false
 	cpu.fn = false
 	cpu.fh = false
 	cpu.fc = carry
@@ -523,7 +523,7 @@ func RLA(cpu *CPU, sys *Sys) int {
 	}
 	cpu.wrb(A, a)
 
-	cpu.fz = a == 0
+	cpu.fz = false
 	cpu.fn = false
 	cpu.fh = false
 	cpu.fc = carry
@@ -580,7 +580,7 @@ func RRCA(cpu *CPU, sys *Sys) int {
 	a |= oldA << 7
 	cpu.wrb(A, a)
 
-	cpu.fz = a == 0
+	cpu.fz = false
 	cpu.fn = false
 	cpu.fh = false
 	cpu.fc = carry
@@ -598,7 +598,7 @@ func RRA(cpu *CPU, sys *Sys) int {
 	}
 	cpu.wrb(A, a)
 
-	cpu.fz = a == 0
+	cpu.fz = false
 	cpu.fn = false
 	cpu.fh = false
 	cpu.fc = carry
