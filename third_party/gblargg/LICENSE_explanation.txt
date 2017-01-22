@@ -1,0 +1,34 @@
+These files didn't come with this license but I emailed the author and he said it was cool for me to use the test ROMs under the license in LICENSE.
+
+From: Shay Green <*redacted*@gmail.com>
+Date: Wed, 13 Jul 2016 21:53:22 -0500
+Subject: Re: License for your gameboy test roms?
+To: Mike Gerow <gerow@mgerow.com>
+Content-Type: text/plain; charset=UTF-8
+
+Thanks for the feedback. You can paste this into the files near the
+beginning (essentially the MIT/modified BSD license):
+
+; Copyright (C) 2009 Shay Green <gblargg@gmail.com>.
+; Permission to use, copy, modify, and/or distribute this
+; software for any purpose with or without fee is hereby granted,
+; provided that the above copyright notice and this permission
+; notice appear in all copies. PROVIDED "AS IS", WITHOUT WARRANTY.
+
+On Wed, Jul 13, 2016 at 9:45 PM, Mike Gerow <gerow@mgerow.com> wrote:
+
+> Hi Shay,
+>
+> I'm working on a gameboy emulator just as a fun little project here <
+> https://github.com/gerow/blitzle>. Your test ROMs have been a huge asset
+> and I was considering integrating them into automated tests that dump the
+> serial out and ensure the tests indicate success. I couldn't find a license
+> for them, though. Are they under any kind of free software license? If not
+> could they be :)
+>
+> Much thanks!
+>
+> --
+> Mike Gerow
+> gerow@mgerow.com
+>
