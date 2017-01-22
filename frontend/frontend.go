@@ -39,7 +39,7 @@ func NewFrontend(updateButtonser gb.UpdateButtonser) (*Frontend, error) {
 	texture, err := renderer.CreateTexture(sdl.PIXELFORMAT_RGBA8888,
 		sdl.TEXTUREACCESS_STREAMING, int(gb.LCDSizeX), int(gb.LCDSizeY))
 	f := &Frontend{updateButtonser, window, renderer, texture, 0, gb.ButtonState{}}
-	f.eventWatchHandle = sdl.AddEventWatch(f.FilterEvent)
+	f.eventWatchHandle = sdl.AddEventWatchFunc(f.FilterEvent, nil)
 	return f, nil
 }
 
@@ -102,7 +102,7 @@ func (f *Frontend) getKey(code sdl.Scancode) *bool {
 	return nil
 }
 
-func (f *Frontend) FilterEvent(e sdl.Event) bool {
+func (f *Frontend) FilterEvent(e sdl.Event, _ interface{}) bool {
 	switch v := e.(type) {
 	case *sdl.KeyDownEvent:
 		if k := f.getKey(v.Keysym.Scancode); k != nil {
