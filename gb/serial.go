@@ -88,7 +88,6 @@ func (s *Serial) W(addr uint16, val uint8) {
 				// Just print a message and ignore.
 				fmt.Printf("!!! attempt to start new transfer when transfer already in progress\n")
 			} else {
-				fmt.Printf("Serial transfer started\n")
 				// XXX(gerow): This should probably be done
 				// concurrently.
 				s.doSwap(false)
