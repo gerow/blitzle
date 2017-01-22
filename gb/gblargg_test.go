@@ -1,7 +1,6 @@
 package gb
 
 import (
-	"fmt"
 	"log"
 	"testing"
 )
@@ -35,13 +34,10 @@ func (b *BufferSerialSwapper) SerialSwap(v uint8) uint8 {
 }
 
 func (b *BufferSerialSwapper) passed() bool {
-	//fmt.Printf("b.buf: %v\n", string(b.buf))
 	if len(b.buf) < len(passKeyword) {
 		return false
 	}
 	checkSlice := b.buf[len(b.buf)-len(passKeyword):]
-	//fmt.Printf("passKeyword: %v\n", passKeyword)
-	//fmt.Printf("checkSlice: %v\n", checkSlice)
 	for i, b := range []byte(passKeyword) {
 		if b != checkSlice[i] {
 			return false
@@ -53,7 +49,6 @@ func (b *BufferSerialSwapper) passed() bool {
 func TestROMs(t *testing.T) {
 	for _, rom := range roms {
 		r, err := LoadROMFromFile(rom)
-		fmt.Printf("Running %v", rom)
 		if err != nil {
 			log.Fatal(err)
 		}
